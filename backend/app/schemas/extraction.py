@@ -39,3 +39,5 @@ class ExtractionResponse(BaseModel):
     usage: ExtractionTokenUsage
 
     latency_ms: float
+
+    attempts: int
