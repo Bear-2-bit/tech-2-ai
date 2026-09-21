@@ -1,115 +1,91 @@
-import logging
+from app.ai.providers.base import (
+    LLMMessage,
+    LLMProvider,
+    LLMRequest,
+)
+from app.schemas.chat import (
+    ChatRequest,
+    ChatResponse,
+    TokenUsage,
+)
 
-import httpx
 
-from app.core.config import settings
-from app.core.exceptions import LLMTimeoutError, LLMUpstreamError
-from app.schemas.chat import ChatRequest, ChatResponse, TokenUsage
+class ChatService:
+
+    def __init__(
+        self,
+        llm_provider: LLMProvider,
+    ):
+        self.llm_provider = llm_provider
 
 
-logger = logging.getLogger(__name__)
+    async def chat(
+        self,
+        request: ChatRequest,
+    ) -> ChatResponse:
+
+        messages = []
 
 
-async def chat(request: ChatRequest) -> ChatResponse:
-    messages = []
-
-    # 1. system prompt
-    if request.system_prompt:
-        messages.append(
-            {
-                "role": "system",
-                "content": request.system_prompt,
-            }
-        )
-
-    # 2. 完整聊天历史
-    for message in request.messages:
-        messages.append(
-            {
-                "role": message.role,
-                "content": message.content,
-            }
-        )
-
-    # 3. DeepSeek 请求体
-    body = {
-        "model": settings.deepseek_model,
-        "messages": messages,
-        "thinking": {
-            "type": "disabled",
-        },
-        "temperature": request.temperature,
-        "max_tokens": request.max_tokens,
-    }
-
-    headers = {
-        "Authorization": f"Bearer {settings.deepseek_api_key}",
-        "Content-Type": "application/json",
-    }
-
-    # 4. 调用 DeepSeek
-    try:
-        async with httpx.AsyncClient(
-            base_url=settings.deepseek_base_url,
-            timeout=10.0,
-        ) as client:
-            response = await client.post(
-                "/chat/completions",
-                headers=headers,
-                json=body,
+        # system prompt
+        if request.system_prompt:
+            messages.append(
+                LLMMessage(
+                    role="system",
+                    content=request.system_prompt,
+                )
             )
 
-            response.raise_for_status()
 
-    except httpx.TimeoutException as exc:
-        logger.exception("LLM request timed out")
+        # 多轮聊天历史
+        for message in request.messages:
+            messages.append(
+                LLMMessage(
+                    role=message.role,
+                    content=message.content,
+                )
+            )
 
-        raise LLMTimeoutError(
-            "LLM request timed out"
-        ) from exc
 
-    except httpx.HTTPStatusError as exc:
-        logger.exception(
-            "LLM returned HTTP status: %s",
-            exc.response.status_code,
+        # Chat业务数据
+        # ↓
+        # 通用LLM请求
+        llm_request = LLMRequest(
+            messages=messages,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
         )
 
-        raise LLMUpstreamError(
-            f"LLM returned status {exc.response.status_code}"
-        ) from exc
 
-    except httpx.RequestError as exc:
-        logger.exception(
-            "Failed to connect to LLM service"
+        # 调用统一LLM能力
+        llm_response = await self.llm_provider.chat(
+            llm_request
         )
 
-        raise LLMUpstreamError(
-            "Failed to connect to LLM service"
-        ) from exc
 
-    # 5. 解析模型响应
-    try:
-        data = response.json()
-
-        choice = data["choices"][0]
-        usage = data["usage"]
-
+        # 通用LLM结果
+        # ↓
+        # Chat业务响应
         return ChatResponse(
-            answer=choice["message"]["content"],
-            model=data["model"],
-            finish_reason=choice["finish_reason"],
+            answer=llm_response.content,
+
+            model=llm_response.model,
+
+            finish_reason=(
+                llm_response.finish_reason
+            ),
+
             usage=TokenUsage(
-                prompt_tokens=usage["prompt_tokens"],
-                completion_tokens=usage["completion_tokens"],
-                total_tokens=usage["total_tokens"],
+                prompt_tokens=(
+                    llm_response.usage.prompt_tokens
+                ),
+
+                completion_tokens=(
+                    llm_response.usage.completion_tokens
+                ),
+
+                total_tokens=(
+                    llm_response.usage.total_tokens
+                ),
             ),
         )
-
-    except (ValueError, KeyError, IndexError, TypeError) as exc:
-        logger.exception(
-            "Invalid response returned by LLM service"
-        )
-
-        raise LLMUpstreamError(
-            "Invalid response returned by LLM service"
-        ) from exc
