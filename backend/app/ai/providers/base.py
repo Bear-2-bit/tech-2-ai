@@ -15,6 +15,16 @@ class LLMRequest:
     temperature: float
     max_tokens: int
 
+    # text：
+    # 普通文本输出
+    #
+    # json_object：
+    # 要求模型输出JSON
+    response_format: Literal[
+        "text",
+        "json_object",
+    ] = "text"
+
 
 @dataclass
 class LLMUsage:
@@ -40,6 +50,7 @@ class LLMStreamChunk:
 
     model: str | None = None
     finish_reason: str | None = None
+
     usage: LLMUsage | None = None
 
     latency_ms: float | None = None

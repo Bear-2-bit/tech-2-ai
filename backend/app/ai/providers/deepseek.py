@@ -13,8 +13,8 @@ from app.ai.providers.base import (
     LLMProvider,
     LLMRequest,
     LLMResponse,
-    LLMUsage,
     LLMStreamChunk,
+    LLMUsage,
 )
 from app.core.exceptions import (
     LLMTimeoutError,
@@ -45,6 +45,10 @@ class DeepSeekProvider(LLMProvider):
         )
 
 
+    # =========================
+    # 普通非流式调用
+    # =========================
+
     async def chat(
         self,
         request: LLMRequest,
@@ -69,6 +73,10 @@ class DeepSeekProvider(LLMProvider):
                 max_tokens=request.max_tokens,
 
                 stream=False,
+
+                response_format={
+                    "type": request.response_format,
+                },
 
                 extra_body={
                     "thinking": {
@@ -102,7 +110,8 @@ class DeepSeekProvider(LLMProvider):
             )
 
             raise LLMUpstreamError(
-                f"LLM returned status {exc.status_code}"
+                f"LLM returned status "
+                f"{exc.status_code}"
             ) from exc
 
 
@@ -113,10 +122,12 @@ class DeepSeekProvider(LLMProvider):
 
         choice = response.choices[0]
 
+
         if choice.message.content is None:
             raise LLMUpstreamError(
                 "LLM response does not contain content"
             )
+
 
         if response.usage is None:
             raise LLMUpstreamError(
@@ -146,9 +157,11 @@ class DeepSeekProvider(LLMProvider):
                 prompt_tokens=(
                     response.usage.prompt_tokens
                 ),
+
                 completion_tokens=(
                     response.usage.completion_tokens
                 ),
+
                 total_tokens=(
                     response.usage.total_tokens
                 ),
@@ -157,6 +170,10 @@ class DeepSeekProvider(LLMProvider):
             latency_ms=latency_ms,
         )
 
+
+    # =========================
+    # 流式调用
+    # =========================
 
     async def stream_chat(
         self,
@@ -178,12 +195,17 @@ class DeepSeekProvider(LLMProvider):
                 ],
 
                 temperature=request.temperature,
+
                 max_tokens=request.max_tokens,
 
                 stream=True,
 
                 stream_options={
                     "include_usage": True,
+                },
+
+                response_format={
+                    "type": request.response_format,
                 },
 
                 extra_body={
@@ -193,22 +215,33 @@ class DeepSeekProvider(LLMProvider):
                 },
             )
 
+
             final_model = self.model
+
             final_finish_reason = None
+
             final_usage = None
+
 
             async for chunk in stream:
 
-                final_model = chunk.model or final_model
+                final_model = (
+                    chunk.model
+                    or final_model
+                )
 
-                # 有正常内容 chunk
+
                 if chunk.choices:
                     choice = chunk.choices[0]
 
                     if choice.finish_reason:
-                        final_finish_reason = choice.finish_reason
+                        final_finish_reason = (
+                            choice.finish_reason
+                        )
 
-                    content = choice.delta.content
+                    content = (
+                        choice.delta.content
+                    )
 
                     if content:
                         yield LLMStreamChunk(
@@ -216,38 +249,54 @@ class DeepSeekProvider(LLMProvider):
                             content=content,
                         )
 
-                # 最后的 chunk 中获取 Token Usage
+
                 if chunk.usage:
                     final_usage = LLMUsage(
-                        prompt_tokens=chunk.usage.prompt_tokens,
-                        completion_tokens=chunk.usage.completion_tokens,
-                        total_tokens=chunk.usage.total_tokens,
+                        prompt_tokens=(
+                            chunk.usage.prompt_tokens
+                        ),
+
+                        completion_tokens=(
+                            chunk.usage.completion_tokens
+                        ),
+
+                        total_tokens=(
+                            chunk.usage.total_tokens
+                        ),
                     )
 
+
         except APITimeoutError as exc:
-            logger.exception("LLM streaming request timed out")
+            logger.exception(
+                "LLM streaming request timed out"
+            )
 
             raise LLMTimeoutError(
                 "LLM streaming request timed out"
             ) from exc
 
+
         except APIConnectionError as exc:
             logger.exception(
-                "Failed to connect to LLM streaming service"
+                "Failed to connect to "
+                "LLM streaming service"
             )
 
             raise LLMUpstreamError(
                 "Failed to connect to LLM service"
             ) from exc
 
+
         except APIStatusError as exc:
             logger.exception(
-                "LLM streaming returned HTTP status: %s",
+                "LLM streaming returned "
+                "HTTP status: %s",
                 exc.status_code,
             )
 
             raise LLMUpstreamError(
-                f"LLM returned status {exc.status_code}"
+                f"LLM returned status "
+                f"{exc.status_code}"
             ) from exc
 
 
@@ -266,8 +315,14 @@ class DeepSeekProvider(LLMProvider):
 
         yield LLMStreamChunk(
             type="done",
+
             model=final_model,
-            finish_reason=final_finish_reason,
+
+            finish_reason=(
+                final_finish_reason
+            ),
+
             usage=final_usage,
+
             latency_ms=latency_ms,
         )
