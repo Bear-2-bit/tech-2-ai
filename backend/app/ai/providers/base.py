@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Literal
+from typing import AsyncIterator, Literal
 
 
 @dataclass
@@ -32,6 +32,19 @@ class LLMResponse:
     latency_ms: float
 
 
+@dataclass
+class LLMStreamChunk:
+    type: Literal["delta", "done"]
+
+    content: str = ""
+
+    model: str | None = None
+    finish_reason: str | None = None
+    usage: LLMUsage | None = None
+
+    latency_ms: float | None = None
+
+
 class LLMProvider(ABC):
 
     @abstractmethod
@@ -39,4 +52,12 @@ class LLMProvider(ABC):
         self,
         request: LLMRequest,
     ) -> LLMResponse:
+        pass
+
+
+    @abstractmethod
+    async def stream_chat(
+        self,
+        request: LLMRequest,
+    ) -> AsyncIterator[LLMStreamChunk]:
         pass

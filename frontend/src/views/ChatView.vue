@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from "vue"
-import { sendChat } from "../api/chat"
+import { streamChat } from "../api/chat"
 
 
 // 当前输入框
@@ -36,79 +36,100 @@ const error = ref("")
 async function handleSubmit() {
   const text = message.value.trim()
 
-  if (!text) {
-    error.value = "请输入消息"
-    return
-  }
-
-  if (loading.value) {
+  if (!text || loading.value) {
     return
   }
 
 
-  // 本次用户消息
   const userMessage = {
     role: "user",
     content: text,
   }
 
 
-  // 先加入页面聊天历史
   messages.value.push(userMessage)
 
-  // 清空输入框
   message.value = ""
 
   loading.value = true
   error.value = ""
 
 
-  try {
-    // 注意：
-    // 这里不是只发送这一次的问题
-    // 而是发送整个 messages 历史
-    const data = await sendChat({
-      messages: messages.value,
-      system_prompt: systemPrompt.value || null,
-      temperature: temperature.value,
-      max_tokens: maxTokens.value,
-    })
-
-
-    // DeepSeek回答完成后
-    // 把 assistant 回答也加入聊天历史
-    messages.value.push({
-      role: "assistant",
-      content: data.answer,
-    })
-
-
-    // 保存模型运行信息
-    model.value = data.model
-    usage.value = data.usage
-    finishReason.value = data.finish_reason
-    latencyMs.value = data.latency_ms
-
-  } catch (err) {
-    console.error(err)
-
-  const status = err.response?.status
-
-  if (status === 504) {
-    error.value = "模型响应超时，请稍后重试。"
-  } else if (status === 502) {
-    error.value = "模型服务暂时不可用。"
-  } else if (status === 422) {
-    error.value = "请求参数不合法。"
-  } else {
-    error.value = "请求失败，请稍后重试。"
+  const assistantMessage = {
+    role: "assistant",
+    content: "",
   }
 
-  // 请求失败时，把刚才加入的 user 消息撤销
-  messages.value.pop()
+  messages.value.push(
+    assistantMessage
+  )
+
+  const assistantIndex =
+    messages.value.length - 1
+
+
+  try {
+
+    const requestMessages =
+      messages.value.slice(0, -1)
+
+
+    await streamChat(
+      {
+        messages: requestMessages,
+
+        system_prompt:
+          systemPrompt.value || null,
+
+        temperature:
+          temperature.value,
+
+        max_tokens:
+          maxTokens.value,
+      },
+
+      (data) => {
+
+        if (data.type === "delta") {
+
+          messages.value[
+            assistantIndex
+          ].content += data.content
+        }
+
+
+        if (data.type === "done") {
+
+          model.value =
+            data.model || ""
+
+          finishReason.value =
+            data.finish_reason || ""
+
+          latencyMs.value =
+            data.latency_ms || 0
+
+          usage.value =
+            data.usage
+        }
+
+      }
+    )
+
+  } catch (err) {
+
+    console.error(err)
+
+    error.value =
+      "模型流式请求失败，请稍后重试。"
+
+    // 删除没有成功完成的assistant消息
+    messages.value.pop()
 
   } finally {
+
     loading.value = false
+
   }
 }
 </script>

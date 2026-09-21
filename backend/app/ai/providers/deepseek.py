@@ -1,5 +1,6 @@
 import logging
 from time import perf_counter
+from typing import AsyncIterator
 
 from openai import (
     APIConnectionError,
@@ -13,6 +14,7 @@ from app.ai.providers.base import (
     LLMRequest,
     LLMResponse,
     LLMUsage,
+    LLMStreamChunk,
 )
 from app.core.exceptions import (
     LLMTimeoutError,
@@ -152,5 +154,120 @@ class DeepSeekProvider(LLMProvider):
                 ),
             ),
 
+            latency_ms=latency_ms,
+        )
+
+
+    async def stream_chat(
+        self,
+        request: LLMRequest,
+    ) -> AsyncIterator[LLMStreamChunk]:
+
+        start_time = perf_counter()
+
+        try:
+            stream = await self.client.chat.completions.create(
+                model=self.model,
+
+                messages=[
+                    {
+                        "role": message.role,
+                        "content": message.content,
+                    }
+                    for message in request.messages
+                ],
+
+                temperature=request.temperature,
+                max_tokens=request.max_tokens,
+
+                stream=True,
+
+                stream_options={
+                    "include_usage": True,
+                },
+
+                extra_body={
+                    "thinking": {
+                        "type": "disabled",
+                    }
+                },
+            )
+
+            final_model = self.model
+            final_finish_reason = None
+            final_usage = None
+
+            async for chunk in stream:
+
+                final_model = chunk.model or final_model
+
+                # 有正常内容 chunk
+                if chunk.choices:
+                    choice = chunk.choices[0]
+
+                    if choice.finish_reason:
+                        final_finish_reason = choice.finish_reason
+
+                    content = choice.delta.content
+
+                    if content:
+                        yield LLMStreamChunk(
+                            type="delta",
+                            content=content,
+                        )
+
+                # 最后的 chunk 中获取 Token Usage
+                if chunk.usage:
+                    final_usage = LLMUsage(
+                        prompt_tokens=chunk.usage.prompt_tokens,
+                        completion_tokens=chunk.usage.completion_tokens,
+                        total_tokens=chunk.usage.total_tokens,
+                    )
+
+        except APITimeoutError as exc:
+            logger.exception("LLM streaming request timed out")
+
+            raise LLMTimeoutError(
+                "LLM streaming request timed out"
+            ) from exc
+
+        except APIConnectionError as exc:
+            logger.exception(
+                "Failed to connect to LLM streaming service"
+            )
+
+            raise LLMUpstreamError(
+                "Failed to connect to LLM service"
+            ) from exc
+
+        except APIStatusError as exc:
+            logger.exception(
+                "LLM streaming returned HTTP status: %s",
+                exc.status_code,
+            )
+
+            raise LLMUpstreamError(
+                f"LLM returned status {exc.status_code}"
+            ) from exc
+
+
+        latency_ms = (
+            perf_counter() - start_time
+        ) * 1000
+
+
+        logger.info(
+            "LLM stream completed "
+            "model=%s latency_ms=%.2f",
+            final_model,
+            latency_ms,
+        )
+
+
+        yield LLMStreamChunk(
+            type="done",
+            model=final_model,
+            finish_reason=final_finish_reason,
+            usage=final_usage,
             latency_ms=latency_ms,
         )
