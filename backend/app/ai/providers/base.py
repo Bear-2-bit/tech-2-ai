@@ -29,6 +29,7 @@ class LLMResponse:
     model: str
     finish_reason: str | None
     usage: LLMUsage
+    latency_ms: float
 
 
 class LLMProvider(ABC):

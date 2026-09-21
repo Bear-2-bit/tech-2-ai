@@ -1,4 +1,5 @@
 import logging
+from time import perf_counter
 
 from openai import (
     APIConnectionError,
@@ -29,19 +30,16 @@ class DeepSeekProvider(LLMProvider):
         api_key: str,
         base_url: str,
         model: str,
+        timeout: float,
+        max_retries: int,
     ):
         self.model = model
 
         self.client = AsyncOpenAI(
             api_key=api_key,
             base_url=base_url,
-
-            # Phase 2.2 再正式学习配置
-            timeout=30.0,
-
-            # SDK默认会自动重试。
-            # 现在先关闭，Phase 2.2 专门研究Retry。
-            max_retries=0,
+            timeout=timeout,
+            max_retries=max_retries,
         )
 
 
@@ -49,6 +47,8 @@ class DeepSeekProvider(LLMProvider):
         self,
         request: LLMRequest,
     ) -> LLMResponse:
+
+        start_time = perf_counter()
 
         try:
             response = await self.client.chat.completions.create(
@@ -104,6 +104,11 @@ class DeepSeekProvider(LLMProvider):
             ) from exc
 
 
+        latency_ms = (
+            perf_counter() - start_time
+        ) * 1000
+
+
         choice = response.choices[0]
 
         if choice.message.content is None:
@@ -115,6 +120,17 @@ class DeepSeekProvider(LLMProvider):
             raise LLMUpstreamError(
                 "LLM response does not contain usage"
             )
+
+
+        logger.info(
+            "LLM call succeeded "
+            "model=%s latency_ms=%.2f "
+            "tokens=%s finish_reason=%s",
+            response.model,
+            latency_ms,
+            response.usage.total_tokens,
+            choice.finish_reason,
+        )
 
 
         return LLMResponse(
@@ -135,4 +151,6 @@ class DeepSeekProvider(LLMProvider):
                     response.usage.total_tokens
                 ),
             ),
+
+            latency_ms=latency_ms,
         )

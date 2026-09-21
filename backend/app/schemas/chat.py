@@ -26,3 +26,4 @@ class ChatResponse(BaseModel):
     model: str
     finish_reason: str | None
     usage: TokenUsage
+    latency_ms: float

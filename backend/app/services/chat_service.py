@@ -88,4 +88,5 @@ class ChatService:
                     llm_response.usage.total_tokens
                 ),
             ),
+            latency_ms=llm_response.latency_ms,
         )

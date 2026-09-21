@@ -7,6 +7,8 @@ llm_provider = DeepSeekProvider(
     api_key=settings.deepseek_api_key,
     base_url=settings.deepseek_base_url,
     model=settings.deepseek_model,
+    timeout=settings.llm_timeout_seconds,
+    max_retries=settings.llm_max_retries,
 )
 
 

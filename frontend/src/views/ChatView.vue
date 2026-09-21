@@ -26,7 +26,7 @@ const messages = ref([])
 const model = ref("")
 const usage = ref(null)
 const finishReason = ref("")
-
+const latencyMs = ref(0)
 
 // 页面状态
 const loading = ref(false)
@@ -87,6 +87,7 @@ async function handleSubmit() {
     model.value = data.model
     usage.value = data.usage
     finishReason.value = data.finish_reason
+    latencyMs.value = data.latency_ms
 
   } catch (err) {
     console.error(err)
@@ -248,6 +249,11 @@ async function handleSubmit() {
           Total Tokens：
           {{ usage.total_tokens }}
         </p>
+
+        <p>
+          Latency：{{ latencyMs.toFixed(2) }} ms
+        </p>  
+              
       </div>
 
     </section>
