@@ -17,3 +17,9 @@ class RAGResponse(BaseModel):
     query: str
     answer: str
     retrieved_documents: list[RAGDocument]
+
+
+class KnowledgeIngestionResponse(BaseModel):
+    filename: str
+    document_count: int
+    chunk_count: int

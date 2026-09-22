@@ -21,6 +21,8 @@ from app.services.search_service import SearchService
 
 from app.services.rag_service import RAGService
 
+from app.services.knowledge_ingestion_service import KnowledgeIngestionService
+
 # =========================
 # Phase 1-3 手写 LLM Provider
 # =========================
@@ -109,3 +111,9 @@ rag_service = RAGService(
 
 def get_rag_service() -> RAGService:
     return rag_service
+
+
+knowledge_ingestion_service = KnowledgeIngestionService(vector_store=vector_store)
+
+def get_knowledge_ingestion_service() -> KnowledgeIngestionService:
+    return knowledge_ingestion_service
