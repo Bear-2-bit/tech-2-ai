@@ -7,6 +7,7 @@ import ChatView from "../views/ChatView.vue"
 
 import ExtractView from "../views/ExtractView.vue"
 
+import SearchView from "../views/SearchView.vue"
 
 const router = createRouter({
 
@@ -27,6 +28,10 @@ const router = createRouter({
     {
       path: "/extract",
       component: ExtractView,
+    },
+    { 
+      path: "/search",
+      component: SearchView,
     },
 
   ],

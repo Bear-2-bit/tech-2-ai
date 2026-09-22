@@ -16,7 +16,8 @@ from app.services.extraction_service import (
 from app.services.langchain_extraction_service import (
     LangChainExtractionService,
 )
-
+from app.ai.vector_store import get_vector_store
+from app.services.search_service import SearchService
 
 # =========================
 # Phase 1-3 手写 LLM Provider
@@ -87,3 +88,12 @@ def get_langchain_extraction_service(
 ) -> LangChainExtractionService:
 
     return langchain_extraction_service
+
+
+
+vector_store = get_vector_store()
+search_service = SearchService(vector_store=vector_store)
+
+
+def get_search_service() -> SearchService:
+    return search_service

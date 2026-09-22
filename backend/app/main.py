@@ -20,6 +20,7 @@ from app.api.extraction import (
 from app.api.langchain_extraction import (
     router as langchain_extraction_router,
 )
+from app.api.search import router as search_router
 
 from app.core.config import settings
 from app.core.exceptions import (
@@ -80,7 +81,7 @@ app.include_router(
 app.include_router(
     langchain_extraction_router
 )
-
+app.include_router(search_router)
 
 # =========================
 # LLM Timeout
