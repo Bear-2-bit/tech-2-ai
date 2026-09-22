@@ -1,10 +1,15 @@
 import logging
 
-from fastapi import FastAPI, Request
+from fastapi import (
+    FastAPI,
+    Request,
+)
 from fastapi.middleware.cors import (
     CORSMiddleware,
 )
-from fastapi.responses import JSONResponse
+from fastapi.responses import (
+    JSONResponse,
+)
 
 from app.api.chat import (
     router as chat_router,
@@ -12,6 +17,10 @@ from app.api.chat import (
 from app.api.extraction import (
     router as extraction_router,
 )
+from app.api.langchain_extraction import (
+    router as langchain_extraction_router,
+)
+
 from app.core.config import settings
 from app.core.exceptions import (
     LLMTimeoutError,
@@ -21,6 +30,7 @@ from app.core.exceptions import (
 
 logging.basicConfig(
     level=logging.INFO,
+
     format=(
         "%(asctime)s "
         "%(levelname)s "
@@ -65,6 +75,10 @@ app.include_router(
 
 app.include_router(
     extraction_router
+)
+
+app.include_router(
+    langchain_extraction_router
 )
 
 

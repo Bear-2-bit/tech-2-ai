@@ -1,17 +1,25 @@
+from langchain_deepseek import (
+    ChatDeepSeek,
+)
+
 from app.ai.providers.deepseek import (
     DeepSeekProvider,
 )
 from app.core.config import settings
+
 from app.services.chat_service import (
     ChatService,
 )
 from app.services.extraction_service import (
     ExtractionService,
 )
+from app.services.langchain_extraction_service import (
+    LangChainExtractionService,
+)
 
 
 # =========================
-# LLM Provider
+# Phase 1-3 手写 LLM Provider
 # =========================
 
 llm_provider = DeepSeekProvider(
@@ -37,7 +45,7 @@ def get_chat_service() -> ChatService:
 
 
 # =========================
-# Extraction Service
+# Phase 3 手写 Extraction
 # =========================
 
 extraction_service = ExtractionService(
@@ -47,3 +55,35 @@ extraction_service = ExtractionService(
 
 def get_extraction_service() -> ExtractionService:
     return extraction_service
+
+
+# =========================
+# Phase 4 LangChain Model
+# =========================
+
+langchain_model = ChatDeepSeek(
+    model=settings.deepseek_model,
+    api_key=settings.deepseek_api_key,
+    api_base=settings.deepseek_base_url,
+    temperature=0.0,
+    max_tokens=500,
+    timeout=settings.llm_timeout_seconds,
+    max_retries=settings.llm_max_retries,
+)
+
+
+# =========================
+# Phase 4 LangChain Extraction
+# =========================
+
+langchain_extraction_service = (
+    LangChainExtractionService(
+        model=langchain_model,
+    )
+)
+
+
+def get_langchain_extraction_service(
+) -> LangChainExtractionService:
+
+    return langchain_extraction_service
