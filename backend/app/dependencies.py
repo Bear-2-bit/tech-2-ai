@@ -19,6 +19,8 @@ from app.services.langchain_extraction_service import (
 from app.ai.vector_store import get_vector_store
 from app.services.search_service import SearchService
 
+from app.services.rag_service import RAGService
+
 # =========================
 # Phase 1-3 手写 LLM Provider
 # =========================
@@ -97,3 +99,13 @@ search_service = SearchService(vector_store=vector_store)
 
 def get_search_service() -> SearchService:
     return search_service
+
+
+rag_service = RAGService(
+    vector_store=vector_store,
+    model=langchain_model,
+)
+
+
+def get_rag_service() -> RAGService:
+    return rag_service

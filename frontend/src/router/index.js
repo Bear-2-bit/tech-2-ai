@@ -9,6 +9,8 @@ import ExtractView from "../views/ExtractView.vue"
 
 import SearchView from "../views/SearchView.vue"
 
+import RAGView from "../views/RAGView.vue"
+
 const router = createRouter({
 
   history: createWebHistory(),
@@ -33,7 +35,10 @@ const router = createRouter({
       path: "/search",
       component: SearchView,
     },
-
+    {
+      path: "/rag",
+      component: RAGView,
+    },
   ],
 })
 

@@ -22,6 +22,8 @@ from app.api.langchain_extraction import (
 )
 from app.api.search import router as search_router
 
+from app.api.rag import router as rag_router
+
 from app.core.config import settings
 from app.core.exceptions import (
     LLMTimeoutError,
@@ -83,6 +85,7 @@ app.include_router(
 )
 app.include_router(search_router)
 
+app.include_router(rag_router)
 # =========================
 # LLM Timeout
 # =========================
