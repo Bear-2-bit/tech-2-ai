@@ -23,6 +23,9 @@ from app.services.rag_service import RAGService
 
 from app.services.knowledge_ingestion_service import KnowledgeIngestionService
 
+from app.ai.retrieval.query_rewriter import QueryRewriter
+from app.ai.retrieval.reranker import Reranker
+
 # =========================
 # Phase 1-3 手写 LLM Provider
 # =========================
@@ -103,9 +106,17 @@ def get_search_service() -> SearchService:
     return search_service
 
 
+query_rewriter = QueryRewriter(model=langchain_model)
+
+reranker = Reranker(
+    model_name=settings.reranker_model_name
+)
+
 rag_service = RAGService(
     vector_store=vector_store,
     model=langchain_model,
+    query_rewriter=query_rewriter,
+    reranker=reranker,
 )
 
 

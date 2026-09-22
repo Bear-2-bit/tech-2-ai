@@ -47,6 +47,9 @@ class Settings(BaseSettings):
         "BAAI/bge-small-zh-v1.5"
     )
 
+    reranker_model_name: str = (
+        "BAAI/bge-reranker-base"
+    )
 
     # =========================
     # Qdrant

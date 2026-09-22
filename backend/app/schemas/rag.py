@@ -11,12 +11,22 @@ class RAGRequest(BaseModel):
 class RAGDocument(BaseModel):
     content: str
     metadata: dict[str, Any]
+    rerank_score: float
+
+
+class RAGCitation(BaseModel):
+    index: int
+    source: str
+    page: str | None = None
+    chunk_index: int | None = None
 
 
 class RAGResponse(BaseModel):
     query: str
+    rewritten_query: str
     answer: str
     retrieved_documents: list[RAGDocument]
+    citations: list[RAGCitation]
 
 
 class KnowledgeIngestionResponse(BaseModel):
