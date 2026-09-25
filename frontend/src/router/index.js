@@ -11,6 +11,8 @@ import SearchView from "../views/SearchView.vue"
 
 import RAGView from "../views/RAGView.vue"
 
+import SQLView from "../views/SQLView.vue"
+
 const router = createRouter({
 
   history: createWebHistory(),
@@ -38,6 +40,10 @@ const router = createRouter({
     {
       path: "/rag",
       component: RAGView,
+    },
+    {
+      path: "/sql",
+      component: SQLView,
     },
   ],
 })
