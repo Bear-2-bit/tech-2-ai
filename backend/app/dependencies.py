@@ -19,6 +19,9 @@ from app.services.agent_service import AgentService
 from app.ai.tools.calculator import calculator
 from app.ai.tools.database_query import create_database_query_tool
 from app.ai.tools.knowledge_search import create_knowledge_search_tool
+from app.ai.workflows.business_analysis import BusinessAnalysisWorkflow
+from app.services.workflow_service import WorkflowService
+
 # =========================
 # Phase 1-3 手写 LLM Provider
 # =========================
@@ -33,6 +36,22 @@ def get_llm_provider() -> DeepSeekProvider:
         max_retries=settings.llm_max_retries,
     )
 
+@lru_cache
+def get_non_thinking_model() -> ChatDeepSeek:
+    return ChatDeepSeek(
+        model=settings.deepseek_model,
+        api_key=settings.deepseek_api_key,
+        api_base=settings.deepseek_base_url,
+        temperature=0.0,
+        max_tokens=2000,
+        timeout=settings.llm_timeout_seconds,
+        max_retries=settings.llm_max_retries,
+        extra_body={
+            "thinking": {
+                "type": "disabled",
+            }
+        },
+    )
 
 # =========================
 # Chat Service
@@ -67,7 +86,7 @@ def get_langchain_model() -> ChatDeepSeek:
         api_key=settings.deepseek_api_key,
         api_base=settings.deepseek_base_url,
         temperature=0.0,
-        max_tokens=500,
+        max_tokens=5000,
         timeout=settings.llm_timeout_seconds,
         max_retries=settings.llm_max_retries,
     )
@@ -159,7 +178,7 @@ def get_knowledge_ingestion_service() -> KnowledgeIngestionService:
 def get_sql_service() -> SQLService:
     return SQLService(
         database_path=Path("data/business.db"),
-        model=get_langchain_model(),
+        model=get_non_thinking_model(),
     )
 
 # =========================
@@ -182,4 +201,22 @@ def get_agent_service() -> AgentService:
             knowledge_search,
             database_query,
         ],
+    )
+
+# =========================
+# Phase 10 Workflow
+# =========================
+@lru_cache
+def get_business_analysis_workflow() -> BusinessAnalysisWorkflow:
+    return BusinessAnalysisWorkflow(
+        model=get_non_thinking_model(),
+        sql_service=get_sql_service(),
+        rag_service=get_rag_service(),
+    )
+
+
+@lru_cache
+def get_workflow_service() -> WorkflowService:
+    return WorkflowService(
+        workflow=get_business_analysis_workflow(),
     )

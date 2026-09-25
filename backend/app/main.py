@@ -28,6 +28,8 @@ from app.api.sql import router as sql_router
 
 from app.api.agent import router as agent_router
 
+from app.api.workflow import router as workflow_router
+
 from app.core.config import settings
 from app.core.exceptions import (
     LLMTimeoutError,
@@ -94,6 +96,8 @@ app.include_router(rag_router)
 app.include_router(sql_router)
 
 app.include_router(agent_router)
+
+app.include_router(workflow_router)
 # =========================
 # LLM Timeout
 # =========================

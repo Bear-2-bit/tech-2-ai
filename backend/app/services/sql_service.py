@@ -37,7 +37,9 @@ class SQLService:
 4. 不要猜测不存在的字段。
 5. sql字段只能包含一条SQLite查询语句。
 6. 不要使用Markdown代码块。
-7. 严格返回JSON，包含sql和explanation两个字段。
+7. SQL必须直接以SELECT开头。
+8. 不允许使用WITH或CTE。
+9. 严格返回JSON，包含sql和explanation两个字段。
 
 Database Schema:
 
@@ -59,6 +61,7 @@ Database Schema:
             "schema": schema,
             "question": request.question,
         })
+        print("Generated SQL:", generated.sql)
 
         execution = await asyncio.to_thread(
             execute_read_only_query,

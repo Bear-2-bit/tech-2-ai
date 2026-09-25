@@ -15,6 +15,8 @@ import SQLView from "../views/SQLView.vue"
 
 import AgentView from "../views/AgentView.vue"
 
+import WorkflowView from "../views/WorkflowView.vue"
+
 const router = createRouter({
 
   history: createWebHistory(),
@@ -51,6 +53,10 @@ const router = createRouter({
       path: "/agent",
       component: AgentView,
     },
+    {
+      path: "/workflow",
+      component: WorkflowView,
+    },    
   ],
 })
 
