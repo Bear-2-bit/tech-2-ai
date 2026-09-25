@@ -15,8 +15,10 @@ from app.services.langchain_extraction_service import LangChainExtractionService
 from app.services.rag_service import RAGService
 from app.services.search_service import SearchService
 from app.services.sql_service import SQLService
-
-
+from app.services.agent_service import AgentService
+from app.ai.tools.calculator import calculator
+from app.ai.tools.database_query import create_database_query_tool
+from app.ai.tools.knowledge_search import create_knowledge_search_tool
 # =========================
 # Phase 1-3 手写 LLM Provider
 # =========================
@@ -158,4 +160,26 @@ def get_sql_service() -> SQLService:
     return SQLService(
         database_path=Path("data/business.db"),
         model=get_langchain_model(),
+    )
+
+# =========================
+# Phase 9 Agent
+# =========================
+@lru_cache
+def get_agent_service() -> AgentService:
+    database_query = create_database_query_tool(
+        get_sql_service
+    )
+
+    knowledge_search = create_knowledge_search_tool(
+        get_search_service
+    )
+
+    return AgentService(
+        model=get_langchain_model(),
+        tools=[
+            calculator,
+            knowledge_search,
+            database_query,
+        ],
     )

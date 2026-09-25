@@ -13,6 +13,8 @@ import RAGView from "../views/RAGView.vue"
 
 import SQLView from "../views/SQLView.vue"
 
+import AgentView from "../views/AgentView.vue"
+
 const router = createRouter({
 
   history: createWebHistory(),
@@ -44,6 +46,10 @@ const router = createRouter({
     {
       path: "/sql",
       component: SQLView,
+    },
+    {
+      path: "/agent",
+      component: AgentView,
     },
   ],
 })

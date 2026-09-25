@@ -33,3 +33,8 @@ def read_database_schema(database_path: Path) -> str:
     connection.close()
 
     return "\n\n".join(schema_parts)
+
+if __name__ == "__main__":
+    schema = read_database_schema("data/business.db")
+    print(schema)
+    
