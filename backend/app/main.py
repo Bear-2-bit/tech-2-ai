@@ -1,3 +1,15 @@
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+
+load_dotenv(
+    BASE_DIR / ".env",
+    override=False,
+)
+
 import logging
 
 from fastapi import (
@@ -29,6 +41,10 @@ from app.api.sql import router as sql_router
 from app.api.agent import router as agent_router
 
 from app.api.workflow import router as workflow_router
+
+from app.api.eval import router as eval_router
+
+from app.api.traces import router as traces_router
 
 from app.core.config import settings
 from app.core.exceptions import (
@@ -98,6 +114,10 @@ app.include_router(sql_router)
 app.include_router(agent_router)
 
 app.include_router(workflow_router)
+
+app.include_router(eval_router)
+
+app.include_router(traces_router)
 # =========================
 # LLM Timeout
 # =========================

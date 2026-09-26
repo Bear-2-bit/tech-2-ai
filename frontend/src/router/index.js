@@ -17,6 +17,10 @@ import AgentView from "../views/AgentView.vue"
 
 import WorkflowView from "../views/WorkflowView.vue"
 
+import EvalView from "../views/EvalView.vue"
+
+import TracesView from "../views/TracesView.vue"
+
 const router = createRouter({
 
   history: createWebHistory(),
@@ -56,7 +60,16 @@ const router = createRouter({
     {
       path: "/workflow",
       component: WorkflowView,
-    },    
+    },  
+    
+    {
+      path: "/eval",
+      component: EvalView,
+    },
+    {
+      path: "/traces",
+      component: TracesView,
+    },
   ],
 })
 

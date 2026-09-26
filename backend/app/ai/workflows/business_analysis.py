@@ -11,6 +11,15 @@ from app.schemas.workflow import AnalysisPlan, BusinessAnalysisReport
 from app.services.rag_service import RAGService
 from app.services.sql_service import SQLService
 
+from datetime import datetime, timezone
+from time import perf_counter
+from uuid import uuid4
+
+from langchain_core.callbacks import UsageMetadataCallbackHandler
+from langsmith import get_current_run_tree, set_run_metadata, traceable
+
+from app.ai.tracing.store import TraceStore
+from app.schemas.trace import TraceSummary
 
 class WorkflowState(TypedDict, total=False):
     query: str
@@ -30,9 +39,11 @@ class BusinessAnalysisWorkflow:
         model: ChatDeepSeek,
         sql_service: SQLService,
         rag_service: RAGService,
+        trace_store: TraceStore,
     ):
         self.sql_service = sql_service
         self.rag_service = rag_service
+        self.trace_store = trace_store
 
         plan_model = model.with_structured_output(
             AnalysisPlan,
@@ -107,25 +118,61 @@ class BusinessAnalysisWorkflow:
     def _build_graph(self):
         builder = StateGraph(WorkflowState)
 
-        builder.add_node("planner", self._planner_node)
-        builder.add_node("sql", self._sql_node)
-        builder.add_node("rag", self._rag_node)
-        builder.add_node("synthesis", self._synthesis_node)
+        builder.add_node(
+            "planner",
+            self._planner_node,
+        )
 
-        builder.add_edge(START, "planner")
+        builder.add_node(
+            "sql",
+            self._sql_node,
+        )
 
-        builder.add_edge("planner", "sql")
-        builder.add_edge("planner", "rag")
+        builder.add_node(
+            "rag",
+            self._rag_node,
+        )
+
+        builder.add_node(
+            "synthesis",
+            self._synthesis_node,
+        )
+
+        builder.add_edge(
+            START,
+            "planner",
+        )
+
+        builder.add_edge(
+            "planner",
+            "sql",
+        )
+
+        builder.add_edge(
+            "planner",
+            "rag",
+        )
 
         builder.add_edge(
             ["sql", "rag"],
             "synthesis",
         )
 
-        builder.add_edge("synthesis", END)
+        builder.add_edge(
+            "synthesis",
+            END,
+        )
 
         return builder.compile()
 
+    @traceable(
+        name="workflow.planner",
+        run_type="chain",
+        tags=[
+            "workflow",
+            "planner",
+        ],
+    )
     async def _planner_node(
         self,
         state: WorkflowState,
@@ -134,11 +181,25 @@ class BusinessAnalysisWorkflow:
             "query": state["query"],
         })
 
+        set_run_metadata(
+            sql_question=plan.sql_question,
+            rag_question=plan.rag_question,
+        )
+
         return {
             "sql_question": plan.sql_question,
             "rag_question": plan.rag_question,
         }
 
+    @traceable(
+        name="workflow.sql",
+        run_type="chain",
+        tags=[
+            "workflow",
+            "sql",
+            "nl2sql",
+        ],
+    )
     async def _sql_node(
         self,
         state: WorkflowState,
@@ -150,10 +211,28 @@ class BusinessAnalysisWorkflow:
             )
         )
 
+        data = result.model_dump()
+
+        set_run_metadata(
+            sql_question=state["sql_question"],
+            generated_sql=data.get("sql"),
+            row_count=len(
+                data.get("rows", [])
+            ),
+        )
+
         return {
-            "sql_result": result.model_dump(),
+            "sql_result": data,
         }
 
+    @traceable(
+        name="workflow.rag",
+        run_type="chain",
+        tags=[
+            "workflow",
+            "rag",
+        ],
+    )
     async def _rag_node(
         self,
         state: WorkflowState,
@@ -165,10 +244,32 @@ class BusinessAnalysisWorkflow:
             )
         )
 
+        data = result.model_dump()
+
+        documents = (
+            data.get("retrieved_documents")
+            or data.get("documents")
+            or []
+        )
+
+        set_run_metadata(
+            rag_question=state["rag_question"],
+            top_k=3,
+            document_count=len(documents),
+        )
+
         return {
-            "rag_result": result.model_dump(),
+            "rag_result": data,
         }
 
+    @traceable(
+        name="workflow.synthesis",
+        run_type="chain",
+        tags=[
+            "workflow",
+            "synthesis",
+        ],
+    )
     async def _synthesis_node(
         self,
         state: WorkflowState,
@@ -185,14 +286,130 @@ class BusinessAnalysisWorkflow:
             ),
         })
 
+        data = report.model_dump()
+
+        set_run_metadata(
+            report_title=data.get("title"),
+            finding_count=len(
+                data.get("key_findings", [])
+            ),
+            recommendation_count=len(
+                data.get(
+                    "recommendations",
+                    [],
+                )
+            ),
+        )
+
         return {
-            "report": report.model_dump(),
+            "report": data,
         }
 
+    @traceable(
+        name="business_analysis",
+        run_type="chain",
+        tags=[
+            "workflow",
+            "business-analysis",
+        ],
+        metadata={
+            "workflow": "business_analysis",
+        },
+    )
     async def run(
         self,
         query: str,
     ) -> WorkflowState:
-        return await self.graph.ainvoke({
-            "query": query,
-        })
+        trace_id = str(uuid4())
+
+        current_run = get_current_run_tree()
+
+        langsmith_trace_id = (
+            str(current_run.trace_id)
+            if current_run
+            else None
+        )
+
+        set_run_metadata(
+            app_trace_id=trace_id,
+        )
+
+        usage_callback = UsageMetadataCallbackHandler()
+
+        started_at = datetime.now(timezone.utc)
+        start = perf_counter()
+
+        status = "success"
+        error = None
+
+        try:
+            result = await self.graph.ainvoke(
+                {
+                    "query": query,
+                },
+                config={
+                    "callbacks": [
+                        usage_callback,
+                    ],
+                },
+            )
+
+            return result
+
+        except Exception as exc:
+            status = "error"
+            error = (
+                f"{type(exc).__name__}: {exc}"
+            )
+
+            raise
+
+        finally:
+            latency_ms = (
+                perf_counter() - start
+            ) * 1000
+
+            usage = usage_callback.usage_metadata
+
+            input_tokens = sum(
+                item.get("input_tokens", 0) or 0
+                for item in usage.values()
+            )
+
+            output_tokens = sum(
+                item.get("output_tokens", 0) or 0
+                for item in usage.values()
+            )
+
+            total_tokens = sum(
+                item.get("total_tokens", 0) or 0
+                for item in usage.values()
+            )
+
+            set_run_metadata(
+                app_trace_id=trace_id,
+                status=status,
+                latency_ms=round(latency_ms, 2),
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                total_tokens=total_tokens,
+            )
+
+            self.trace_store.add(
+                TraceSummary(
+                    trace_id=trace_id,
+                    langsmith_trace_id=langsmith_trace_id,
+                    name="business_analysis",
+                    status=status,
+                    started_at=started_at,
+                    latency_ms=round(
+                        latency_ms,
+                        2,
+                    ),
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    total_tokens=total_tokens,
+                    input_preview=query[:120],
+                    error=error,
+                )
+            )

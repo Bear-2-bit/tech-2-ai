@@ -1,0 +1,32 @@
+[
+  {
+    "id": "sql-001",
+    "type": "sql",
+    "input": "哪个部门销售额最高？请返回部门和销售额。",
+    "expected": {
+      "rows": [
+        ["华东", 270000.0]
+      ]
+    }
+  },
+  {
+    "id": "agent-001",
+    "type": "agent",
+    "input": "查询销售额最高的部门。",
+    "expected": {
+      "tools": [
+        "database_query"
+      ]
+    }
+  },
+  {
+    "id": "workflow-001",
+    "type": "workflow",
+    "input": "分析目前各部门的销售情况，并结合企业知识库给出经营建议。",
+    "expected": {
+      "contains": [
+        "华东"
+      ]
+    }
+  }
+]

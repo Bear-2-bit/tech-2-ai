@@ -21,7 +21,8 @@ from app.ai.tools.database_query import create_database_query_tool
 from app.ai.tools.knowledge_search import create_knowledge_search_tool
 from app.ai.workflows.business_analysis import BusinessAnalysisWorkflow
 from app.services.workflow_service import WorkflowService
-
+from app.services.eval_service import EvaluationService
+from app.ai.tracing.store import TraceStore
 # =========================
 # Phase 1-3 手写 LLM Provider
 # =========================
@@ -212,6 +213,7 @@ def get_business_analysis_workflow() -> BusinessAnalysisWorkflow:
         model=get_non_thinking_model(),
         sql_service=get_sql_service(),
         rag_service=get_rag_service(),
+        trace_store=get_trace_store(),
     )
 
 
@@ -220,3 +222,22 @@ def get_workflow_service() -> WorkflowService:
     return WorkflowService(
         workflow=get_business_analysis_workflow(),
     )
+
+# =========================
+# Phase 11 Evaluation
+# =========================
+@lru_cache
+def get_eval_service() -> EvaluationService:
+    return EvaluationService(
+        get_rag_service=get_rag_service,
+        get_sql_service=get_sql_service,
+        get_agent_service=get_agent_service,
+        get_workflow_service=get_workflow_service,
+    )
+
+# =========================
+# Phase 12 Trace
+# =========================
+@lru_cache
+def get_trace_store() -> TraceStore:
+    return TraceStore(max_size=100)
