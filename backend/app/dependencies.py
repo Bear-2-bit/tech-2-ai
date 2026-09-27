@@ -1,5 +1,4 @@
 from functools import lru_cache
-from pathlib import Path
 
 from langchain_deepseek import ChatDeepSeek
 
@@ -178,7 +177,7 @@ def get_knowledge_ingestion_service() -> KnowledgeIngestionService:
 @lru_cache
 def get_sql_service() -> SQLService:
     return SQLService(
-        database_path=Path("data/business.db"),
+        database_path=settings.database_path,
         model=get_non_thinking_model(),
     )
 

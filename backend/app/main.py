@@ -1,12 +1,7 @@
-from pathlib import Path
-
 from dotenv import load_dotenv
-
-
-BASE_DIR = Path(__file__).resolve().parents[1]
-
+from app.core.config import ENV_FILE
 load_dotenv(
-    BASE_DIR / ".env",
+    ENV_FILE,
     override=False,
 )
 

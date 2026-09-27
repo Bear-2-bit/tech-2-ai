@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from pathlib import Path
 
 from langchain_core.prompts import ChatPromptTemplate
@@ -7,6 +8,9 @@ from langchain_deepseek import ChatDeepSeek
 from app.ai.sql.schema_reader import read_database_schema
 from app.ai.sql.sql_executor import execute_read_only_query
 from app.schemas.sql import SQLGenerationResult, SQLRequest, SQLResponse
+
+
+logger = logging.getLogger(__name__)
 
 
 class SQLService:
@@ -54,14 +58,23 @@ Database Schema:
 
         self.chain = prompt | structured_model
 
-    async def query(self, request: SQLRequest) -> SQLResponse:
-        schema = read_database_schema(self.database_path)
+    async def query(
+        self,
+        request: SQLRequest,
+    ) -> SQLResponse:
+        schema = read_database_schema(
+            self.database_path
+        )
 
         generated = await self.chain.ainvoke({
             "schema": schema,
             "question": request.question,
         })
-        print("Generated SQL:", generated.sql)
+
+        logger.info(
+            "Generated SQL: %s",
+            generated.sql,
+        )
 
         execution = await asyncio.to_thread(
             execute_read_only_query,
