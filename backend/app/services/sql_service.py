@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_deepseek import ChatDeepSeek
+from langchain_core.language_models import BaseChatModel
 
 from app.ai.sql.schema_reader import read_database_schema
 from app.ai.sql.sql_executor import execute_read_only_query
@@ -17,7 +17,7 @@ class SQLService:
     def __init__(
         self,
         database_path: Path,
-        model: ChatDeepSeek,
+        model: BaseChatModel,
     ):
         self.database_path = database_path
 

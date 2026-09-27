@@ -2,14 +2,14 @@ from langchain.agents import create_agent
 from langchain.agents.middleware import ToolCallLimitMiddleware
 from langchain_core.messages import BaseMessage
 from langchain_core.tools import BaseTool
-from langchain_deepseek import ChatDeepSeek
+from langchain_core.language_models import BaseChatModel
 from langgraph.errors import GraphRecursionError
 
 
 class AgentRuntime:
     def __init__(
         self,
-        model: ChatDeepSeek,
+        model: BaseChatModel,
         tools: list[BaseTool],
     ):
         self.agent = create_agent(

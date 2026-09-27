@@ -3,8 +3,8 @@ import asyncio
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_deepseek import ChatDeepSeek
-from langchain_qdrant import QdrantVectorStore
+from langchain_core.language_models import BaseChatModel
+from langchain_core.vectorstores import VectorStore
 
 from app.ai.retrieval.query_rewriter import QueryRewriter
 from app.ai.retrieval.reranker import Reranker
@@ -19,8 +19,8 @@ from app.schemas.rag import (
 class RAGService:
     def __init__(
         self,
-        vector_store: QdrantVectorStore,
-        model: ChatDeepSeek,
+        vector_store: VectorStore,
+        model: BaseChatModel,
         query_rewriter: QueryRewriter,
         reranker: Reranker,
     ):
