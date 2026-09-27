@@ -14,6 +14,7 @@ from app.services.langchain_extraction_service import LangChainExtractionService
 from app.services.rag_service import RAGService
 from app.services.search_service import SearchService
 from app.services.sql_service import SQLService
+from app.ai.agent.runtime import AgentRuntime
 from app.services.agent_service import AgentService
 from app.ai.tools.calculator import calculator
 from app.ai.tools.database_query import create_database_query_tool
@@ -185,7 +186,7 @@ def get_sql_service() -> SQLService:
 # Phase 9 Agent
 # =========================
 @lru_cache
-def get_agent_service() -> AgentService:
+def get_agent_runtime() -> AgentRuntime:
     database_query = create_database_query_tool(
         get_sql_service
     )
@@ -194,13 +195,20 @@ def get_agent_service() -> AgentService:
         get_search_service
     )
 
-    return AgentService(
+    return AgentRuntime(
         model=get_langchain_model(),
         tools=[
             calculator,
             knowledge_search,
             database_query,
         ],
+    )
+
+
+@lru_cache
+def get_agent_service() -> AgentService:
+    return AgentService(
+        runtime=get_agent_runtime(),
     )
 
 # =========================
