@@ -1,7 +1,5 @@
-import http from "./http"
+import { post, request } from "./http"
 
-
-export async function runAgent(data) {
-  const response = await http.post("api/agent", data)
-  return response.data
-}
+export const sessions = () => request("/api/agent/sessions")
+export const session = (id) => request(`/api/agent/sessions/${id}`)
+export const investigate = (data) => post("/api/agent/runs", data)

@@ -1,0 +1,19 @@
+# Runtime direct dependencies. Lock with: pip-compile requirements.in --output-file requirements.txt
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
+pydantic==2.13.5
+pydantic-settings==2.15.0
+openai==3.16.2
+langchain==1.4.2
+langchain-core==1.6.4
+langchain-deepseek==1.1.1
+langgraph==1.2.12
+langsmith==0.14.1
+langchain-huggingface==1.2.2
+langchain-qdrant==1.1.0
+langchain-text-splitters==1.1.2
+qdrant-client==1.19.1
+sentence-transformers==6.1.0
+pypdf==6.19.0
+python-multipart==0.0.32
+sqlglot==30.23.0

@@ -1,7 +1,4 @@
-import http from "./http"
+import { post, request } from "./http"
 
-
-export async function runWorkflow(data) {
-  const response = await http.post("api/workflow", data)
-  return response.data
-}
+export const generate = (data) => post("/api/workflow/reports", data)
+export const history = () => request("/api/workflow/reports")

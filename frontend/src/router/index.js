@@ -1,77 +1,21 @@
-import {
-  createRouter,
-  createWebHistory,
-} from "vue-router"
-
-import ChatView from "../views/ChatView.vue"
-
-import ExtractView from "../views/ExtractView.vue"
-
-import SearchView from "../views/SearchView.vue"
-
-import RAGView from "../views/RAGView.vue"
-
-import SQLView from "../views/SQLView.vue"
-
-import AgentView from "../views/AgentView.vue"
-
-import WorkflowView from "../views/WorkflowView.vue"
-
-import EvalView from "../views/EvalView.vue"
-
-import TracesView from "../views/TracesView.vue"
+import { createRouter, createWebHistory } from "vue-router"
 
 const router = createRouter({
-
   history: createWebHistory(),
-
   routes: [
-
-    {
-      path: "/",
-      redirect: "/chat",
-    },
-
-    {
-      path: "/chat",
-      component: ChatView,
-    },
-
-    {
-      path: "/extract",
-      component: ExtractView,
-    },
-    { 
-      path: "/search",
-      component: SearchView,
-    },
-    {
-      path: "/rag",
-      component: RAGView,
-    },
-    {
-      path: "/sql",
-      component: SQLView,
-    },
-    {
-      path: "/agent",
-      component: AgentView,
-    },
-    {
-      path: "/workflow",
-      component: WorkflowView,
-    },  
-    
-    {
-      path: "/eval",
-      component: EvalView,
-    },
-    {
-      path: "/traces",
-      component: TracesView,
-    },
-  ],
+    { path: "/", redirect: "/llm" },
+    { path: "/llm", component: () => import("../views/llm/LLMView.vue") },
+    { path: "/rag", component: () => import("../views/rag/RAGView.vue") },
+    { path: "/nl2sql", component: () => import("../views/nl2sql/SQLView.vue") },
+    { path: "/agent", component: () => import("../views/agent/AgentView.vue") },
+    { path: "/workflow", component: () => import("../views/workflow/WorkflowView.vue") },
+    { path: "/engineering", component: () => import("../views/engineering/EngineeringView.vue") },
+    ...["/chat", "/extract"].map((path) => ({ path, redirect: "/llm" })),
+    { path: "/search", redirect: "/rag" },
+    { path: "/sql", redirect: "/nl2sql" },
+    ...["/eval", "/traces"].map((path) => ({ path, redirect: "/engineering" })),
+    { path: "/:pathMatch(.*)*", redirect: "/llm" }
+  ]
 })
-
 
 export default router

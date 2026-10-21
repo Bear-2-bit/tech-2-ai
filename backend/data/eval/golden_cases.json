@@ -2,31 +2,447 @@
   {
     "id": "sql-001",
     "type": "sql",
-    "input": "哪个部门销售额最高？请返回部门和销售额。",
+    "input": "查询全部已完成订单总数，只返回一个数。",
     "expected": {
-      "rows": [
-        ["华东", 270000.0]
-      ]
+      "sql": "SELECT COUNT(*) FROM orders WHERE status='completed'"
     }
   },
   {
-    "id": "agent-001",
+    "id": "sql-002",
+    "type": "sql",
+    "input": "查询产品总数，只返回一个数。",
+    "expected": {
+      "sql": "SELECT COUNT(*) FROM products"
+    }
+  },
+  {
+    "id": "sql-003",
+    "type": "sql",
+    "input": "查询部门总数，只返回一个数。",
+    "expected": {
+      "sql": "SELECT COUNT(*) FROM departments"
+    }
+  },
+  {
+    "id": "sql-004",
+    "type": "sql",
+    "input": "查询客户总数，只返回一个数。",
+    "expected": {
+      "sql": "SELECT COUNT(*) FROM customers"
+    }
+  },
+  {
+    "id": "sql-005",
+    "type": "sql",
+    "input": "查询取消订单总数，只返回一个数。",
+    "expected": {
+      "sql": "SELECT COUNT(*) FROM orders WHERE status='cancelled'"
+    }
+  },
+  {
+    "id": "sql-006",
+    "type": "sql",
+    "input": "查询待完成订单总数，只返回一个数。",
+    "expected": {
+      "sql": "SELECT COUNT(*) FROM orders WHERE status='pending'"
+    }
+  },
+  {
+    "id": "sql-007",
+    "type": "sql",
+    "input": "查询2026年9月已完成订单数，只返回一个数。",
+    "expected": {
+      "sql": "SELECT COUNT(*) FROM orders WHERE status='completed' AND order_date>='2026-09-01' AND order_date<'2026-10-01'"
+    }
+  },
+  {
+    "id": "sql-008",
+    "type": "sql",
+    "input": "查询2026年9月华东已完成订单数，只返回一个数。",
+    "expected": {
+      "sql": "SELECT COUNT(*) FROM orders o JOIN departments d ON o.department_id=d.id WHERE d.name='华东' AND o.status='completed' AND o.order_date>='2026-09-01' AND o.order_date<'2026-10-01'"
+    }
+  },
+  {
+    "id": "sql-009",
+    "type": "sql",
+    "input": "查询全部未关闭工单数，只返回一个数。",
+    "expected": {
+      "sql": "SELECT COUNT(*) FROM service_tickets WHERE status='open'"
+    }
+  },
+  {
+    "id": "sql-010",
+    "type": "sql",
+    "input": "查询全部已解决工单数，只返回一个数。",
+    "expected": {
+      "sql": "SELECT COUNT(*) FROM service_tickets WHERE status='resolved'"
+    }
+  },
+  {
+    "id": "sql-011",
+    "type": "sql",
+    "input": "查询2026年9月新开售后工单数，只返回一个数。",
+    "expected": {
+      "sql": "SELECT COUNT(*) FROM service_tickets WHERE opened_at>='2026-09-01' AND opened_at<'2026-10-01'"
+    }
+  },
+  {
+    "id": "sql-012",
+    "type": "sql",
+    "input": "查询所有已完成退款总额，以元显示，只返回一个数。",
+    "expected": {
+      "sql": "SELECT COALESCE(SUM(amount_cents),0)/100.0 FROM refunds WHERE status='completed'"
+    }
+  },
+  {
+    "id": "sql-013",
+    "type": "sql",
+    "input": "查询2026年9月已完成退款总额，以元显示，只返回一个数。",
+    "expected": {
+      "sql": "SELECT COALESCE(SUM(amount_cents),0)/100.0 FROM refunds WHERE status='completed' AND refund_date>='2026-09-01' AND refund_date<'2026-10-01'"
+    }
+  },
+  {
+    "id": "sql-014",
+    "type": "sql",
+    "input": "查询2026年9月完成订单销售额，以元显示，只返回一个数。",
+    "expected": {
+      "sql": "SELECT COALESCE(SUM(i.quantity*i.unit_price_cents),0)/100.0 FROM orders o JOIN order_items i ON i.order_id=o.id WHERE o.status='completed' AND o.order_date>='2026-09-01' AND o.order_date<'2026-10-01'"
+    }
+  },
+  {
+    "id": "sql-015",
+    "type": "sql",
+    "input": "查询2026年9月各部门净销售目标，只返回部门名称和目标元金额。",
+    "expected": {
+      "sql": "SELECT d.name,t.amount_cents/100.0 FROM sales_targets t JOIN departments d ON t.department_id=d.id WHERE t.month='2026-09'"
+    }
+  },
+  {
+    "id": "sql-016",
+    "type": "sql",
+    "input": "查询所有产品，只返回产品编号和名称。",
+    "expected": {
+      "sql": "SELECT code,name FROM products"
+    }
+  },
+  {
+    "id": "sql-017",
+    "type": "sql",
+    "input": "查询各行业客户数，只返回行业和数量。",
+    "expected": {
+      "sql": "SELECT industry,COUNT(*) FROM customers GROUP BY industry"
+    }
+  },
+  {
+    "id": "sql-018",
+    "type": "sql",
+    "input": "查询各订单状态数量，只返回状态和数量。",
+    "expected": {
+      "sql": "SELECT status,COUNT(*) FROM orders GROUP BY status"
+    }
+  },
+  {
+    "id": "sql-019",
+    "type": "sql",
+    "input": "查询各类售后工单数量，只返回分类和数量。",
+    "expected": {
+      "sql": "SELECT category,COUNT(*) FROM service_tickets GROUP BY category"
+    }
+  },
+  {
+    "id": "sql-020",
+    "type": "sql",
+    "input": "查询各原因已完成退款数量，只返回原因和数量。",
+    "expected": {
+      "sql": "SELECT reason,COUNT(*) FROM refunds WHERE status='completed' GROUP BY reason"
+    }
+  },
+  {
+    "id": "sql-021",
+    "type": "sql",
+    "input": "查询业务订单的最早和最晚日期，只返回两个日期。",
+    "expected": {
+      "sql": "SELECT MIN(order_date),MAX(order_date) FROM orders"
+    }
+  },
+  {
+    "id": "sql-022",
+    "type": "sql",
+    "input": "查询产品编号ROBOT-A的目录价格，以元显示，只返回一个数。",
+    "expected": {
+      "sql": "SELECT unit_price_cents/100.0 FROM products WHERE code='ROBOT-A'"
+    }
+  },
+  {
+    "id": "sql-023",
+    "type": "sql",
+    "input": "查询华南全部已完成退款总额，以元显示，只返回一个数。",
+    "expected": {
+      "sql": "SELECT COALESCE(SUM(r.amount_cents),0)/100.0 FROM refunds r JOIN order_items i ON r.order_item_id=i.id JOIN orders o ON i.order_id=o.id JOIN departments d ON o.department_id=d.id WHERE r.status='completed' AND d.name='华南'"
+    }
+  },
+  {
+    "id": "sql-024",
+    "type": "sql",
+    "input": "查询2024年已完成订单数量，只返回一个数。",
+    "expected": {
+      "sql": "SELECT COUNT(*) FROM orders WHERE status='completed' AND order_date>='2024-01-01' AND order_date<'2025-01-01'"
+    }
+  },
+  {
+    "id": "rag-001",
+    "type": "rag",
+    "input": "机器人A保修多久，哪些情况不免费？",
+    "expected": {
+      "source": "policy-warranty.md",
+      "top_k": 5
+    }
+  },
+  {
+    "id": "rag-002",
+    "type": "rag",
+    "input": "已经完成与待处理退款如何统计？",
+    "expected": {
+      "source": "metric-refunds.md",
+      "top_k": 5
+    }
+  },
+  {
+    "id": "rag-003",
+    "type": "rag",
+    "input": "净销售额的计算口径是什么？",
+    "expected": {
+      "source": "metric-net-sales.md",
+      "top_k": 5
+    }
+  },
+  {
+    "id": "rag-004",
+    "type": "rag",
+    "input": "月度报告要展示哪些指标？",
+    "expected": {
+      "source": "policy-monthly-review.md",
+      "top_k": 5
+    }
+  },
+  {
+    "id": "rag-005",
+    "type": "rag",
+    "input": "机器人B的编号和目录价格是什么？",
+    "expected": {
+      "source": "product-robot-b.md",
+      "top_k": 5
+    }
+  },
+  {
+    "id": "rag-006",
+    "type": "rag",
+    "input": "没有上月基数时环比怎么办？",
+    "expected": {
+      "source": "metric-growth.md",
+      "top_k": 5
+    }
+  },
+  {
+    "id": "rag-007",
+    "type": "rag",
+    "input": "目标达成率能直接平均各部门比例吗？",
+    "expected": {
+      "source": "metric-attainment.md",
+      "top_k": 5
+    }
+  },
+  {
+    "id": "rag-008",
+    "type": "rag",
+    "input": "一个订单多条明细如何统计订单数？",
+    "expected": {
+      "source": "metric-order-value.md",
+      "top_k": 5
+    }
+  },
+  {
+    "id": "rag-009",
+    "type": "rag",
+    "input": "知识文档更新时旧版本如何处理？",
+    "expected": {
+      "source": "process-versioning.md",
+      "top_k": 5
+    }
+  },
+  {
+    "id": "rag-010",
+    "type": "rag",
+    "input": "安装工单增加就能说明质量下降吗？",
+    "expected": {
+      "source": "case-service-followup.md",
+      "top_k": 5
+    }
+  },
+  {
+    "id": "rag-011",
+    "type": "rag",
+    "input": "演示数据范围和随机种子是什么？",
+    "expected": {
+      "source": "reference-dataset.md",
+      "top_k": 5
+    }
+  },
+  {
+    "id": "rag-012",
+    "type": "rag",
+    "input": "销售额应该使用目录价还是成交价？",
+    "expected": {
+      "source": "metric-sales.md",
+      "top_k": 5
+    }
+  },
+  {
+    "id": "llm-1",
+    "type": "llm",
+    "input": "使用Vue和FastAPI开发任务页面，优先级为high。",
+    "expected": {
+      "engine": "native",
+      "fields": {
+        "priority": "high",
+        "technologies": [
+          "Vue",
+          "FastAPI"
+        ]
+      }
+    }
+  },
+  {
+    "id": "llm-2",
+    "type": "llm",
+    "input": "整理项目说明，没有涉及技术名称。",
+    "expected": {
+      "engine": "native",
+      "fields": {
+        "priority": "medium",
+        "deadline": null,
+        "technologies": []
+      }
+    }
+  },
+  {
+    "id": "llm-3",
+    "type": "llm",
+    "input": "使用Vue和FastAPI开发任务页面，优先级为high。",
+    "expected": {
+      "engine": "langchain",
+      "fields": {
+        "priority": "high",
+        "technologies": [
+          "Vue",
+          "FastAPI"
+        ]
+      }
+    }
+  },
+  {
+    "id": "llm-4",
+    "type": "llm",
+    "input": "整理项目说明，没有涉及技术名称。",
+    "expected": {
+      "engine": "langchain",
+      "fields": {
+        "priority": "medium",
+        "deadline": null,
+        "technologies": []
+      }
+    }
+  },
+  {
+    "id": "agent-1",
     "type": "agent",
-    "input": "查询销售额最高的部门。",
+    "input": "查询2026年9月华东完成订单数量。",
     "expected": {
       "tools": [
-        "database_query"
-      ]
-    }
-  },
-  {
-    "id": "workflow-001",
-    "type": "workflow",
-    "input": "分析目前各部门的销售情况，并结合企业知识库给出经营建议。",
-    "expected": {
+        "query_business_data"
+      ],
       "contains": [
         "华东"
       ]
+    }
+  },
+  {
+    "id": "agent-2",
+    "type": "agent",
+    "input": "2026年9月机器人A保修期多长？请给出政策依据。",
+    "expected": {
+      "tools": [
+        "search_knowledge"
+      ],
+      "contains": [
+        "12"
+      ]
+    }
+  },
+  {
+    "id": "agent-3",
+    "type": "agent",
+    "input": "调查2026年9月华东净销售额相对8月变化，结合售后制度提出核查建议。",
+    "expected": {
+      "tools": [
+        "query_business_data",
+        "search_knowledge"
+      ]
+    }
+  },
+  {
+    "id": "agent-4",
+    "type": "agent",
+    "input": "分析九月的情况。",
+    "expected": {
+      "tools": [],
+      "status": "needs_clarification"
+    }
+  },
+  {
+    "id": "workflow-1",
+    "type": "workflow",
+    "input": {
+      "month": "2026-09",
+      "department_id": null
+    },
+    "expected": {
+      "quality": true
+    }
+  },
+  {
+    "id": "workflow-2",
+    "type": "workflow",
+    "input": {
+      "month": "2026-09",
+      "department_id": 1
+    },
+    "expected": {
+      "quality": true
+    }
+  },
+  {
+    "id": "workflow-3",
+    "type": "workflow",
+    "input": {
+      "month": "2026-09",
+      "department_id": 2
+    },
+    "expected": {
+      "quality": true
+    }
+  },
+  {
+    "id": "workflow-4",
+    "type": "workflow",
+    "input": {
+      "month": "2026-09",
+      "department_id": 3
+    },
+    "expected": {
+      "quality": true
     }
   }
 ]

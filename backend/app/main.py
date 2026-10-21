@@ -1,166 +1,113 @@
-from dotenv import load_dotenv
-from app.core.config import ENV_FILE
-load_dotenv(
-    ENV_FILE,
-    override=False,
-)
-
 import logging
+from contextlib import asynccontextmanager
+from uuid import uuid4
 
-from fastapi import (
-    FastAPI,
-    Request,
-)
-from fastapi.middleware.cors import (
-    CORSMiddleware,
-)
-from fastapi.responses import (
-    JSONResponse,
-)
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-from app.api.chat import (
-    router as chat_router,
-)
-from app.api.extraction import (
-    router as extraction_router,
-)
-from app.api.langchain_extraction import (
-    router as langchain_extraction_router,
-)
-from app.api.search import router as search_router
-
-from app.api.rag import router as rag_router
-
-from app.api.sql import router as sql_router
-
-from app.api.agent import router as agent_router
-
-from app.api.workflow import router as workflow_router
-
-from app.api.eval import router as eval_router
-
-from app.api.traces import router as traces_router
-
-from app.core.config import settings
-from app.core.exceptions import (
-    LLMTimeoutError,
-    LLMUpstreamError,
-)
+from app.core.config import get_settings
+from app.core.errors import AppError, public_error
+from app.core.jobs import jobs
+from app.core.logging import configure_logging
+from app.core.store import get_store
+from app.core.telemetry import request_id
+from app.modules.agent.router import router as agent_router
+from app.modules.engineering.router import router as engineering_router
+from app.modules.llm.router import router as llm_router
+from app.modules.nl2sql.router import router as nl2sql_router
+from app.modules.rag.router import router as rag_router
+from app.modules.workflow.router import router as workflow_router
 
 
-logging.basicConfig(
-    level=logging.INFO,
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    configure_logging()
+    jobs.recover()
+    get_store().execute("UPDATE documents SET status='error',error='服务中断，请重新上传' WHERE status='processing'")
+    yield
+    await jobs.shutdown()
+    from app.resources import close_resources
 
-    format=(
-        "%(asctime)s "
-        "%(levelname)s "
-        "%(name)s "
-        "%(message)s"
-    ),
-)
+    await close_resources()
+    from app.modules.llm.native import get_client
+
+    if get_client.cache_info().currsize:
+        await get_client().close()
+        get_client.cache_clear()
 
 
-app = FastAPI(
-    title="tech-2-ai",
-    version="0.1.0",
-)
-
-
-# =========================
-# CORS
-# =========================
-
+app = FastAPI(title="tech-2-ai · 机器人企业运营工作台", version="2.0.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-
-    allow_origins=[
-        settings.frontend_origin,
-    ],
-
+    allow_origins=[get_settings().frontend_origin],
     allow_credentials=True,
-
     allow_methods=["*"],
-
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
 )
 
 
-# =========================
-# Routers
-# =========================
+@app.middleware("http")
+async def request_context(request: Request, call_next):
+    request.state.request_id = str(uuid4())
+    token = request_id.set(request.state.request_id)
+    try:
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request.state.request_id
+        return response
+    finally:
+        request_id.reset(token)
 
-app.include_router(
-    chat_router
-)
 
-app.include_router(
-    extraction_router
-)
-
-app.include_router(
-    langchain_extraction_router
-)
-app.include_router(search_router)
-
-app.include_router(rag_router)
-
-app.include_router(sql_router)
-
-app.include_router(agent_router)
-
-app.include_router(workflow_router)
-
-app.include_router(eval_router)
-
-app.include_router(traces_router)
-# =========================
-# LLM Timeout
-# =========================
-
-@app.exception_handler(
-    LLMTimeoutError
-)
-async def llm_timeout_handler(
-    request: Request,
-    exc: LLMTimeoutError,
-):
+@app.exception_handler(AppError)
+async def app_error(request: Request, exc: AppError):
     return JSONResponse(
-        status_code=504,
-
+        status_code=exc.status,
         content={
-            "detail":
-                "LLM service timeout",
+            "detail": str(exc),
+            "code": exc.code,
+            "request_id": getattr(request.state, "request_id", None),
         },
     )
 
 
-# =========================
-# LLM Upstream Error
-# =========================
-
-@app.exception_handler(
-    LLMUpstreamError
-)
-async def llm_upstream_handler(
-    request: Request,
-    exc: LLMUpstreamError,
-):
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError):
     return JSONResponse(
-        status_code=502,
-
+        status_code=422,
         content={
-            "detail":
-                "LLM service unavailable",
+            "detail": "输入格式错误，请检查必填项与取值范围。",
+            "code": "validation",
+            "fields": [".".join(map(str, error["loc"])) for error in exc.errors()],
+            "request_id": getattr(request.state, "request_id", None),
         },
     )
 
 
-# =========================
-# Health Check
-# =========================
+@app.exception_handler(Exception)
+async def unexpected_error(request: Request, exc: Exception):
+    identifier = getattr(request.state, "request_id", None)
+    logging.getLogger("app").error("request_failed request_id=%s type=%s", identifier, type(exc).__name__)
+    is_timeout = isinstance(exc, TimeoutError) or "timeout" in type(exc).__name__.lower()
+    status = 504 if is_timeout else 502 if type(exc).__module__.startswith(("openai", "httpx")) else 500
+    return JSONResponse(
+        status_code=status,
+        content={
+            "detail": public_error(exc),
+            "code": "timeout" if is_timeout else "service_error",
+            "request_id": identifier,
+        },
+    )
 
-@app.get("/health")
-async def health():
-    return {
-        "status": "ok",
-    }
+
+for router in (llm_router, rag_router, nl2sql_router, agent_router, workflow_router, engineering_router):
+    app.include_router(router)
+
+
+@app.get("/health", tags=["System"])
+def health():
+    from app.resources import loaded_resources
+
+    return {"status": "ok", "version": "2.0.0", "mode": "single-process", "loaded_resources": loaded_resources()}
