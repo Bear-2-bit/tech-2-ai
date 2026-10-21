@@ -14,7 +14,8 @@ _busy: set[str] = set()
 def create_session(title: str = "新的业务调查") -> dict:
     identifier = str(uuid4())
     get_store().execute(
-        "INSERT INTO sessions VALUES(?,?,?,?)", (identifier, title[:80], encode({"history": [], "turns": []}), now())
+        "INSERT INTO sessions VALUES(?,?,?,?)",
+        (identifier, title[:80], encode({"history": [], "turns": []}), now()),
     )
     return {"id": identifier, "title": title[:80]}
 
@@ -61,7 +62,10 @@ async def investigate(request: AgentRequest) -> dict:
             result = {"messages": messages_from_dict(saved["history"])}
             try:
                 async for partial in agent.astream(
-                    {"messages": messages_from_dict(saved["history"]) + [HumanMessage(content=request.query)]},
+                    {
+                        "messages": messages_from_dict(saved["history"])
+                        + [HumanMessage(content=request.query)]
+                    },
                     config={**model_config(), "recursion_limit": 24},
                     stream_mode="values",
                 ):
@@ -70,7 +74,9 @@ async def investigate(request: AgentRequest) -> dict:
                 if not isinstance(report, Investigation):
                     raise AppError("调查未形成有效的结构化结论。", "agent_incomplete")
                 output = report.model_dump()
-                invalid = [key for finding in report.findings for key in finding.evidence_ids if key not in evidence]
+                invalid = [
+                    key for finding in report.findings for key in finding.evidence_ids if key not in evidence
+                ]
                 unsupported = any(not finding.evidence_ids for finding in report.findings)
                 if output["status"] == "success" and (invalid or unsupported or not evidence):
                     output["status"] = "incomplete"
@@ -88,7 +94,9 @@ async def investigate(request: AgentRequest) -> dict:
                     uncertainties=["请缩小调查范围后继续。"],
                     next_steps=[],
                 ).model_dump()
-            executed_ids = {message.tool_call_id for message in result["messages"] if isinstance(message, ToolMessage)}
+            executed_ids = {
+                message.tool_call_id for message in result["messages"] if isinstance(message, ToolMessage)
+            }
             steps = [
                 {"tool": call["name"], "arguments": call.get("args", {})}
                 for message in result["messages"][len(saved["history"]) :]
@@ -98,10 +106,14 @@ async def investigate(request: AgentRequest) -> dict:
             for call in getattr(result["messages"][-1], "tool_calls", []):
                 if call["id"] not in executed_ids:
                     result["messages"].append(
-                        ToolMessage(content="预算不足，此工具未执行。", tool_call_id=call["id"], name=call["name"])
+                        ToolMessage(
+                            content="预算不足，此工具未执行。", tool_call_id=call["id"], name=call["name"]
+                        )
                     )
             history = messages_to_dict(result["messages"])
-            output.update(session_id=session_id, run_id=run_id, evidence=evidence, steps=steps, query=request.query)
+            output.update(
+                session_id=session_id, run_id=run_id, evidence=evidence, steps=steps, query=request.query
+            )
             set_outcome(output["status"])
             saved["turns"].append(output)
             saved["history"] = history

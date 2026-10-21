@@ -10,7 +10,8 @@ defineProps({ documents: { type: Array, default: () => [] } })
         <small v-if="document.score != null">{{ document.score_type }} {{ document.score.toFixed(3) }}</small>
       </summary>
       <p class="muted">
-        {{ document.id }} <span v-if="document.metadata?.page">· 第 {{ document.metadata.page }} 页</span>
+        {{ document.id }}
+        <span v-if="document.metadata?.page">· 第 {{ document.metadata.page }} 页</span>
       </p>
       <p class="preserve">{{ document.content }}</p>
     </details>

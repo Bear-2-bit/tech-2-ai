@@ -53,21 +53,30 @@ async function evaluate() {
       :class="{ active: tab === key }"
       @click="tab = key"
     >
-      {{ name }}</button
-    ><button @click="execute(refresh)">刷新 ↻</button>
+      {{ name }}
+    </button>
+    <button @click="execute(refresh)">刷新 ↻</button>
   </div>
   <p v-if="error || pageError" class="error" role="alert">{{ error || pageError }}</p>
   <template v-if="tab === 'eval'">
     <section class="panel">
       <h2>运行回归评估</h2>
       <p class="muted">
-        共 {{ cases.length }} 条用例。评估会调用模型；RAG、Agent 与 Workflow 用例需要已入库知识。先选少量用例确认环境。
+        共 {{ cases.length }} 条用例。评估会调用模型；RAG、Agent 与 Workflow
+        用例需要已入库知识。先选少量用例确认环境。
       </p>
       <div class="controls">
-        <label v-for="type in ['llm', 'sql', 'rag', 'agent', 'workflow']" :key="type" class="check"
-          ><input v-model="types" type="checkbox" :value="type" :disabled="busy" />{{ type.toUpperCase() }}</label
-        ><label>最多用例数<input v-model.number="limit" type="number" min="1" max="60" /></label
-        ><button :disabled="busy || !types.length" @click="evaluate">{{ busy ? "评估中…" : "开始评估" }}</button>
+        <label v-for="type in ['llm', 'sql', 'rag', 'agent', 'workflow']" :key="type" class="check">
+          <input v-model="types" type="checkbox" :value="type" :disabled="busy" />
+          {{ type.toUpperCase() }}
+        </label>
+        <label>
+          最多用例数
+          <input v-model.number="limit" type="number" min="1" max="60" />
+        </label>
+        <button :disabled="busy || !types.length" @click="evaluate">
+          {{ busy ? "评估中…" : "开始评估" }}
+        </button>
       </div>
     </section>
     <JobProgress :job="job" :busy="busy" @cancel="stop" />

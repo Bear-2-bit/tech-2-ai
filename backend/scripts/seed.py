@@ -144,7 +144,9 @@ def seed_database(path: Path, fixture: bool = False):
                                         price,
                                         refund_day.isoformat(),
                                         "completed",
-                                        "交付延期" if elevated else rng.choice(["客户变更", "安装问题", "产品退回"]),
+                                        "交付延期"
+                                        if elevated
+                                        else rng.choice(["客户变更", "安装问题", "产品退回"]),
                                     ),
                                 )
                             if status == "completed" and rng.random() < (0.5 if elevated else 0.08):
@@ -157,7 +159,9 @@ def seed_database(path: Path, fixture: bool = False):
                                         product[0],
                                         day.isoformat(),
                                         rng.choice(["open", "resolved"]),
-                                        "安装调试" if elevated else rng.choice(["维护咨询", "使用培训", "安装调试"]),
+                                        "安装调试"
+                                        if elevated
+                                        else rng.choice(["维护咨询", "使用培训", "安装调试"]),
                                     ),
                                 )
         assert not db.execute("PRAGMA foreign_key_check").fetchall()

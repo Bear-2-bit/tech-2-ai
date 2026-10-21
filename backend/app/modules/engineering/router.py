@@ -54,7 +54,9 @@ async def cancel(run_id: str):
 @router.get("/logs")
 def logs(limit: int = Query(100, ge=1, le=300), run_id: str | None = None):
     where, parameters = (" WHERE run_id=?", [run_id]) if run_id else ("", [])
-    return get_store().rows("SELECT * FROM events" + where + " ORDER BY id DESC LIMIT ?", [*parameters, limit])
+    return get_store().rows(
+        "SELECT * FROM events" + where + " ORDER BY id DESC LIMIT ?", [*parameters, limit]
+    )
 
 
 @router.get("/evaluations/cases")

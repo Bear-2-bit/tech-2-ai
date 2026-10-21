@@ -55,7 +55,9 @@ async def extract(text: str) -> dict:
 
     start = perf_counter()
     prompt = ChatPromptTemplate.from_messages([("system", EXTRACTION_PROMPT), ("human", "{text}")])
-    chain = prompt | get_model().with_structured_output(ExtractedTask, method="function_calling", include_raw=True)
+    chain = prompt | get_model().with_structured_output(
+        ExtractedTask, method="function_calling", include_raw=True
+    )
     response = await chain.ainvoke({"text": text}, config=model_config())
     if response["parsing_error"] or response["parsed"] is None:
         raise AppError("框架结构化输出未通过校验。", "structured_output", 502)

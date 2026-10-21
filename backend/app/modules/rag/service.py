@@ -34,14 +34,18 @@ async def ask(request: SearchRequest) -> dict:
         )
         chain = prompt | get_model().with_structured_output(GroundedAnswer, method="function_calling")
         answer = await chain.ainvoke(
-            {"query": request.query, "context": json.dumps(documents, ensure_ascii=False)}, config=model_config()
+            {"query": request.query, "context": json.dumps(documents, ensure_ascii=False)},
+            config=model_config(),
         )
         by_id = {doc["id"]: doc for doc in documents}
         inline = set(re.findall(r"\[([A-Za-z0-9-]+)\]", answer.answer))
         invalid = (set(answer.citation_ids) | inline) - by_id.keys()
         citations = [by_id[key] for key in dict.fromkeys(answer.citation_ids) if key in by_id]
         incomplete = (
-            answer.insufficient_evidence or bool(invalid) or not citations or inline != set(answer.citation_ids)
+            answer.insufficient_evidence
+            or bool(invalid)
+            or not citations
+            or inline != set(answer.citation_ids)
         )
         set_outcome("incomplete" if incomplete else "success")
         return {

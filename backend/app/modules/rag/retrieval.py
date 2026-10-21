@@ -41,9 +41,13 @@ def _search(request: SearchRequest, query: str, versions: list[str]) -> list[dic
         filter=Filter(must=[FieldCondition(key="metadata.version_id", match=MatchAny(any=versions))]),
     )
     if request.rerank and candidates:
-        scores = get_reranker().predict([(query, doc.page_content) for doc, _ in candidates], show_progress_bar=False)
+        scores = get_reranker().predict(
+            [(query, doc.page_content) for doc, _ in candidates], show_progress_bar=False
+        )
         candidates = sorted(
-            zip([doc for doc, _ in candidates], map(float, scores), strict=True), key=lambda pair: pair[1], reverse=True
+            zip([doc for doc, _ in candidates], map(float, scores), strict=True),
+            key=lambda pair: pair[1],
+            reverse=True,
         )
     return [
         {
@@ -74,7 +78,10 @@ async def search(request: SearchRequest) -> dict:
             with span("rag", "rag.rewrite"):
                 message = await get_model().ainvoke(
                     [
-                        ("system", "把问题改写为独立的知识检索查询，保持原意与限定条件，只返回查询，不回答。"),
+                        (
+                            "system",
+                            "把问题改写为独立的知识检索查询，保持原意与限定条件，只返回查询，不回答。",
+                        ),
                         ("human", request.query),
                     ],
                     config=model_config(),

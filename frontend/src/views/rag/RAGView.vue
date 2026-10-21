@@ -96,22 +96,38 @@ async function submit() {
   <template v-if="tab === 'documents'">
     <section class="panel">
       <h2>文档入库</h2>
-      <p class="muted">支持 UTF-8 TXT、Markdown 与有文字层的 PDF。同名文档更新版本，相同内容与元数据不会重复入库。</p>
+      <p class="muted">
+        支持 UTF-8 TXT、Markdown 与有文字层的 PDF。同名文档更新版本，相同内容与元数据不会重复入库。
+      </p>
       <div class="controls">
-        <label
-          >选择文件<input
+        <label>
+          选择文件
+          <input
             type="file"
             accept=".txt,.md,.pdf"
             :disabled="indexing"
-            @change="file = $event.target.files[0]" /></label
-        ><label>分类<input v-model="category" maxlength="100" /></label
-        ><label>产品编号<input v-model="productCode" placeholder="可选，如 ROBOT-A" /></label
-        ><label>生效日期<input v-model="effectiveFrom" type="date" /></label>
+            @change="file = $event.target.files[0]"
+          />
+        </label>
+        <label>
+          分类
+          <input v-model="category" maxlength="100" />
+        </label>
+        <label>
+          产品编号
+          <input v-model="productCode" placeholder="可选，如 ROBOT-A" />
+        </label>
+        <label>
+          生效日期
+          <input v-model="effectiveFrom" type="date" />
+        </label>
       </div>
       <div class="row">
-        <button :disabled="indexing || !file" @click="upload">{{ indexing ? "处理中…" : "上传并入库" }}</button
-        ><button class="secondary" :disabled="indexing" @click="seed">导入项目示例知识</button
-        ><button class="secondary" :disabled="busy" @click="execute(refresh)">刷新列表</button>
+        <button :disabled="indexing || !file" @click="upload">
+          {{ indexing ? "处理中…" : "上传并入库" }}
+        </button>
+        <button class="secondary" :disabled="indexing" @click="seed">导入项目示例知识</button>
+        <button class="secondary" :disabled="busy" @click="execute(refresh)">刷新列表</button>
       </div>
     </section>
     <JobProgress :job="job" :busy="indexing" @cancel="stop" />
@@ -135,10 +151,14 @@ async function submit() {
                 :href="api.sourceURL(doc.id)"
                 target="_blank"
                 rel="noreferrer"
-                >{{ doc.filename }} ↗</a
               >
-              <span v-else>{{ doc.filename }}</span
-              ><small v-if="doc.error"><br />{{ doc.error }}</small>
+                {{ doc.filename }} ↗
+              </a>
+              <span v-else>{{ doc.filename }}</span>
+              <small v-if="doc.error">
+                <br />
+                {{ doc.error }}
+              </small>
             </td>
             <td>v{{ doc.version }}</td>
             <td>{{ doc.status }}</td>
@@ -164,10 +184,19 @@ async function submit() {
       <form @submit.prevent="submit">
         <textarea v-model="query" rows="3" placeholder="输入与企业资料相关的问题" :disabled="busy" />
         <div class="controls section-space">
-          <label>Top K<input v-model.number="topK" type="number" min="1" max="20" /></label
-          ><label class="check"><input v-model="rerank" type="checkbox" />启用重排</label
-          ><label class="check"><input v-model="rewrite" type="checkbox" />启用查询改写</label
-          ><button :disabled="busy || !query.trim()">
+          <label>
+            Top K
+            <input v-model.number="topK" type="number" min="1" max="20" />
+          </label>
+          <label class="check">
+            <input v-model="rerank" type="checkbox" />
+            启用重排
+          </label>
+          <label class="check">
+            <input v-model="rewrite" type="checkbox" />
+            启用查询改写
+          </label>
+          <button :disabled="busy || !query.trim()">
             {{ busy ? "处理中…" : tab === "search" ? "检索证据" : "生成回答" }}
           </button>
         </div>
@@ -178,7 +207,9 @@ async function submit() {
       <h2>{{ tab === "search" ? "检索结果" : "基于证据的回答" }}</h2>
       <p v-if="result.answer" class="answer">{{ result.answer }}</p>
       <p v-if="result.status === 'incomplete'" class="notice">证据或引用校验不足，结果需要核对。</p>
-      <p v-if="result.rewritten_query !== result.query" class="muted">改写查询：{{ result.rewritten_query }}</p>
+      <p v-if="result.rewritten_query !== result.query" class="muted">
+        改写查询：{{ result.rewritten_query }}
+      </p>
       <h3 v-if="result.citations?.length">实际引用</h3>
       <EvidenceList :documents="result.citations || []" />
       <h3 class="section-space">候选证据</h3>

@@ -61,26 +61,37 @@ async function open(id) {
 <template>
   <p class="eyebrow">05 / CONTROLLED BUSINESS WORKFLOW</p>
   <h1>按统一口径，完成月度复盘</h1>
-  <p class="intro">固定步骤计算指标、检索适用材料、生成报告并检查证据。核心数字来自确定性查询，支持历史报告回看。</p>
+  <p class="intro">
+    固定步骤计算指标、检索适用材料、生成报告并检查证据。核心数字来自确定性查询，支持历史报告回看。
+  </p>
   <section class="panel">
     <form @submit.prevent="submit">
       <div class="controls">
-        <label>报告月份<input v-model="month" type="month" min="2025-05" max="2026-09" :disabled="busy" /></label
-        ><label
-          >部门范围<select v-model="departmentId" :disabled="busy">
+        <label>
+          报告月份
+          <input v-model="month" type="month" min="2025-05" max="2026-09" :disabled="busy" />
+        </label>
+        <label>
+          部门范围
+          <select v-model="departmentId" :disabled="busy">
             <option value="">全部部门</option>
-            <option v-for="(name, i) in ['华东', '华南', '华北', '华中']" :key="name" :value="i + 1">{{ name }}</option>
-          </select></label
-        >
+            <option v-for="(name, i) in ['华东', '华南', '华北', '华中']" :key="name" :value="i + 1">
+              {{ name }}
+            </option>
+          </select>
+        </label>
       </div>
-      <label>关注事项<input v-model="focus" :disabled="busy" /></label
-      ><button class="section-space" :disabled="busy">{{ busy ? "生成报告中…" : "生成经营复盘" }}</button>
+      <label>
+        关注事项
+        <input v-model="focus" :disabled="busy" />
+      </label>
+      <button class="section-space" :disabled="busy">{{ busy ? "生成报告中…" : "生成经营复盘" }}</button>
     </form>
   </section>
   <p v-if="error || pageError" class="error" role="alert">{{ error || pageError }}</p>
   <JobProgress :job="job" :busy="busy" @cancel="stop" />
-  <template v-if="result"
-    ><p v-if="!result.quality_checks.passed" class="notice">
+  <template v-if="result">
+    <p v-if="!result.quality_checks.passed" class="notice">
       报告需核对：{{ result.quality_checks.issues.join("；") }}
     </p>
     <div class="metric-grid">
@@ -102,17 +113,19 @@ async function open(id) {
       <h3>有依据的建议</h3>
       <ul>
         <li v-for="(item, i) in result.report.recommendations" :key="i">
-          {{ item.action }} <small>{{ item.evidence_ids.join(" · ") }}</small>
+          {{ item.action }}
+          <small>{{ item.evidence_ids.join(" · ") }}</small>
         </li>
       </ul>
       <p v-for="item in result.report.uncertainties" :key="item" class="muted">{{ item }}</p>
-      <EvidenceList :documents="result.documents" /></section
-  ></template>
+      <EvidenceList :documents="result.documents" />
+    </section>
+  </template>
   <section v-if="reports.length" class="panel">
     <h2>历史报告</h2>
     <div v-for="item in reports" :key="item.id" class="row between evidence">
-      <span>{{ JSON.parse(item.metadata).month }} · {{ item.status }}</span
-      ><button class="link-button" :disabled="busy" @click="open(item.id)">查看报告</button>
+      <span>{{ JSON.parse(item.metadata).month }} · {{ item.status }}</span>
+      <button class="link-button" :disabled="busy" @click="open(item.id)">查看报告</button>
     </div>
   </section>
 </template>

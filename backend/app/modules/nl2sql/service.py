@@ -49,7 +49,11 @@ async def query(request: SQLRequest) -> dict:
         errors = []
         for _ in range(2):
             generated = await chain.ainvoke(
-                {"schema": json.dumps(definition, ensure_ascii=False), "question": request.question, "errors": errors},
+                {
+                    "schema": json.dumps(definition, ensure_ascii=False),
+                    "question": request.question,
+                    "errors": errors,
+                },
                 config=model_config(),
             )
             errors = scope_issues(request.question, generated.sql)

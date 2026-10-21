@@ -11,7 +11,13 @@ class ReportRequest(BaseModel):
 
 class MetricFinding(BaseModel):
     metric: Literal[
-        "sales_cents", "refund_cents", "net_sales_cents", "order_count", "ticket_count", "attainment", "net_growth"
+        "sales_cents",
+        "refund_cents",
+        "net_sales_cents",
+        "order_count",
+        "ticket_count",
+        "attainment",
+        "net_growth",
     ]
     interpretation: str
 

@@ -65,37 +65,44 @@ function reset() {
   <h1>理解一次模型调用</h1>
   <p class="intro">在同一个输入与界面中，对照原生 SDK 和 LangChain，观察普通、流式与结构化输出。</p>
   <div class="controls">
-    <label
-      >实现方式<select v-model="engine" :disabled="busy" @change="reset">
+    <label>
+      实现方式
+      <select v-model="engine" :disabled="busy" @change="reset">
         <option value="native">原生 SDK · 理解机制</option>
         <option value="langchain">LangChain · 框架应用</option>
-      </select></label
-    >
-    <label
-      >输出方式<select v-model="mode" :disabled="busy" @change="reset">
+      </select>
+    </label>
+    <label>
+      输出方式
+      <select v-model="mode" :disabled="busy" @change="reset">
         <option value="chat">普通输出</option>
         <option value="stream">流式输出</option>
         <option value="extract">结构化输出</option>
-      </select></label
-    >
+      </select>
+    </label>
     <button class="secondary" :disabled="busy" @click="reset">清空对话</button>
   </div>
   <div class="grid">
     <section class="panel">
       <h2>{{ mode === "extract" ? "任务信息抽取" : "输入与上下文" }}</h2>
-      <label v-if="mode !== 'extract'"
-        >System Prompt<textarea v-model="systemPrompt" rows="2" :disabled="busy" />
+      <label v-if="mode !== 'extract'">
+        System Prompt
+        <textarea v-model="systemPrompt" rows="2" :disabled="busy" />
       </label>
       <div v-if="mode !== 'extract'" class="controls section-space">
-        <label
-          >Temperature<input v-model.number="temperature" type="number" min="0" max="2" step="0.1" :disabled="busy"
-        /></label>
-        <label>Max Tokens<input v-model.number="maxTokens" type="number" min="16" max="8000" :disabled="busy" /></label>
+        <label>
+          Temperature
+          <input v-model.number="temperature" type="number" min="0" max="2" step="0.1" :disabled="busy" />
+        </label>
+        <label>
+          Max Tokens
+          <input v-model.number="maxTokens" type="number" min="16" max="8000" :disabled="busy" />
+        </label>
       </div>
       <form @submit.prevent="submit">
-        <label
-          >{{ mode === "extract" ? "待抽取文本" : "你的问题"
-          }}<textarea
+        <label>
+          {{ mode === "extract" ? "待抽取文本" : "你的问题" }}
+          <textarea
             v-model="input"
             rows="5"
             :disabled="busy"
@@ -107,8 +114,8 @@ function reset() {
           />
         </label>
         <div class="row section-space">
-          <button :disabled="busy || !input.trim()">{{ busy ? "生成中…" : "运行模型" }}</button
-          ><button v-if="busy" type="button" class="secondary" @click="stop">停止生成</button>
+          <button :disabled="busy || !input.trim()">{{ busy ? "生成中…" : "运行模型" }}</button>
+          <button v-if="busy" type="button" class="secondary" @click="stop">停止生成</button>
         </div>
       </form>
       <p v-if="error" class="error section-space" role="alert">{{ error }}</p>

@@ -29,13 +29,18 @@ def vector_store(ensure: bool = False):
         if not exists:
             size = len(embeddings.embed_query("维度检查"))
             client.create_collection(
-                settings.qdrant_collection_name, vectors_config=VectorParams(size=size, distance=Distance.COSINE)
+                settings.qdrant_collection_name,
+                vectors_config=VectorParams(size=size, distance=Distance.COSINE),
             )
-        return QdrantVectorStore(client=client, collection_name=settings.qdrant_collection_name, embedding=embeddings)
+        return QdrantVectorStore(
+            client=client, collection_name=settings.qdrant_collection_name, embedding=embeddings
+        )
     except AppError:
         raise
     except Exception as exc:
-        raise AppError("向量索引连接或模型维度校验失败，请检查 Qdrant 与模型配置。", "vector_unavailable", 503) from exc
+        raise AppError(
+            "向量索引连接或模型维度校验失败，请检查 Qdrant 与模型配置。", "vector_unavailable", 503
+        ) from exc
 
 
 def load_chunks(path: Path, filename: str, metadata: dict) -> list:
@@ -72,7 +77,11 @@ def load_chunks(path: Path, filename: str, metadata: dict) -> list:
 
 def _ingest(path: Path, filename: str, metadata: dict, cancelled: threading.Event) -> dict:
     store = get_store()
-    metadata = {**metadata, "embedding_model": get_settings().embedding_model_name, "splitter_version": "650-100-v2"}
+    metadata = {
+        **metadata,
+        "embedding_model": get_settings().embedding_model_name,
+        "splitter_version": "650-100-v2",
+    }
     document_id = str(uuid5(NAMESPACE_URL, "tech2ai/" + filename.casefold()))
     fingerprint = hashlib.sha256(path.read_bytes() + encode(metadata).encode()).hexdigest()
     version_id = str(uuid4())
@@ -107,9 +116,13 @@ def _ingest(path: Path, filename: str, metadata: dict, cancelled: threading.Even
     original = get_settings().knowledge_dir / "originals" / (version_id + path.suffix.lower())
     try:
         with span("rag", "ingestion.parse"):
-            chunks = load_chunks(path, filename, {**metadata, "document_id": document_id, "version_id": version_id})
+            chunks = load_chunks(
+                path, filename, {**metadata, "document_id": document_id, "version_id": version_id}
+            )
         for chunk in chunks:
-            chunk.metadata["chunk_id"] = str(uuid5(NAMESPACE_URL, f"{version_id}/{chunk.metadata['chunk_index']}"))
+            chunk.metadata["chunk_id"] = str(
+                uuid5(NAMESPACE_URL, f"{version_id}/{chunk.metadata['chunk_index']}")
+            )
         if cancelled.is_set():
             raise AppError("入库已取消。", "cancelled")
         with _index_lock, span("rag", "ingestion.embed"):
@@ -125,9 +138,12 @@ def _ingest(path: Path, filename: str, metadata: dict, cancelled: threading.Even
         shutil.copyfile(path, original)
         with store.connection() as db:
             db.execute(
-                "UPDATE documents SET status='superseded' WHERE document_id=? AND status='ready'", (document_id,)
+                "UPDATE documents SET status='superseded' WHERE document_id=? AND status='ready'",
+                (document_id,),
             )
-            db.execute("UPDATE documents SET status='ready',chunk_count=? WHERE id=?", (len(chunks), version_id))
+            db.execute(
+                "UPDATE documents SET status='ready',chunk_count=? WHERE id=?", (len(chunks), version_id)
+            )
         return {
             "document_id": document_id,
             "version_id": version_id,
@@ -137,7 +153,9 @@ def _ingest(path: Path, filename: str, metadata: dict, cancelled: threading.Even
         }
     except Exception as exc:
         original.unlink(missing_ok=True)
-        store.execute("UPDATE documents SET status='error',error=? WHERE id=?", (public_error(exc), version_id))
+        store.execute(
+            "UPDATE documents SET status='error',error=? WHERE id=?", (public_error(exc), version_id)
+        )
         try:
             delete_vectors("version_id", version_id)
         except Exception:

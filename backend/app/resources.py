@@ -52,7 +52,9 @@ def model_config() -> dict:
                 return
             usage = (response.llm_output or {}).get("token_usage")
             if usage:
-                get_store().usage(identifier, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0))
+                get_store().usage(
+                    identifier, usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0)
+                )
                 return
             for generation in response.generations:
                 for item in generation:
@@ -92,7 +94,9 @@ def get_reranker():
                 settings.reranker_model_name, max_length=512, local_files_only=settings.model_local_files_only
             )
         except Exception as exc:
-            raise AppError("重排模型未就绪，请先运行模型准备脚本，或关闭重排。", "reranker_unavailable", 503) from exc
+            raise AppError(
+                "重排模型未就绪，请先运行模型准备脚本，或关闭重排。", "reranker_unavailable", 503
+            ) from exc
 
     return _once("reranker", create)
 

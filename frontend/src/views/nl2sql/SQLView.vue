@@ -32,15 +32,16 @@ async function submit() {
         <summary>{{ table.name }} · {{ table.row_count }} 行</summary>
         <p class="muted">{{ table.description }}</p>
         <p v-for="column in table.columns" :key="column.name" class="mono">
-          {{ column.name }} <small>{{ column.type }}</small>
+          {{ column.name }}
+          <small>{{ column.type }}</small>
           <small v-if="column.values">
             ·
             {{
               Object.entries(column.values)
                 .map(([key, text]) => `${key}=${text}`)
                 .join("；")
-            }}</small
-          >
+            }}
+          </small>
         </p>
       </details>
     </div>
@@ -48,8 +49,11 @@ async function submit() {
   </details>
   <section class="panel">
     <form @submit.prevent="submit">
-      <label>你想了解什么？<textarea v-model="question" rows="3" :disabled="busy" /></label
-      ><button class="section-space" :disabled="busy || !question.trim()">
+      <label>
+        你想了解什么？
+        <textarea v-model="question" rows="3" :disabled="busy" />
+      </label>
+      <button class="section-space" :disabled="busy || !question.trim()">
         {{ busy ? "生成与查询中…" : "查询业务数据" }}
       </button>
     </form>
@@ -75,7 +79,8 @@ async function submit() {
       </table>
     </div>
     <p class="muted section-space">
-      返回 {{ result.row_count }} 行 <span v-if="result.truncated">· 结果已截断，不能把它当作完整数据集</span>
+      返回 {{ result.row_count }} 行
+      <span v-if="result.truncated">· 结果已截断，不能把它当作完整数据集</span>
     </p>
     <RunInfo :data="result" />
   </section>

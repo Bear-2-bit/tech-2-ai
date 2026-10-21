@@ -36,7 +36,11 @@ def validate_report(report: Narrative, data: dict, documents: list[dict]) -> lis
         allowed.update(re.findall(r"\d+(?:\.\d+)?", block["month"]))
         for key, value in block.items():
             if isinstance(value, (int, float)):
-                numbers = [value / 100, value / 1_000_000, value / 10_000_000_000] if key.endswith("cents") else [value]
+                numbers = (
+                    [value / 100, value / 1_000_000, value / 10_000_000_000]
+                    if key.endswith("cents")
+                    else [value]
+                )
                 if key in {"attainment", "net_growth"}:
                     numbers += [value * 100]
                 for number in numbers:
@@ -97,7 +101,9 @@ async def run_report(request: ReportRequest) -> dict:
                     ("human", "月份 {month}，关注事项：{focus}"),
                 ]
             )
-            chain = prompt | get_model().with_structured_output(Narrative, method="function_calling", include_raw=True)
+            chain = prompt | get_model().with_structured_output(
+                Narrative, method="function_calling", include_raw=True
+            )
             errors = []
             report = None
             for _ in range(2):

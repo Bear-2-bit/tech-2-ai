@@ -42,8 +42,14 @@ async def stream(engine: Implementation, request: ChatRequest):
                     async for event in implementation(engine).stream(request):
                         yield "data: " + json.dumps({**event, "run_id": run_id}, ensure_ascii=False) + "\n\n"
         except Exception as exc:
-            yield "data: " + json.dumps({"type": "error", "detail": public_error(exc)}, ensure_ascii=False) + "\n\n"
+            yield (
+                "data: "
+                + json.dumps({"type": "error", "detail": public_error(exc)}, ensure_ascii=False)
+                + "\n\n"
+            )
 
     return StreamingResponse(
-        events(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

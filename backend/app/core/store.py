@@ -79,7 +79,8 @@ class Store:
 
     def event(self, run_id: str | None, message: str, level: str = "INFO") -> None:
         self.execute(
-            "INSERT INTO events(run_id,level,message,created_at) VALUES(?,?,?,?)", (run_id, level, message, now())
+            "INSERT INTO events(run_id,level,message,created_at) VALUES(?,?,?,?)",
+            (run_id, level, message, now()),
         )
 
     def usage(self, run_id: str, input_tokens: int, output_tokens: int) -> None:

@@ -25,7 +25,9 @@ from app.modules.workflow.router import router as workflow_router
 async def lifespan(app: FastAPI):
     configure_logging()
     jobs.recover()
-    get_store().execute("UPDATE documents SET status='error',error='服务中断，请重新上传' WHERE status='processing'")
+    get_store().execute(
+        "UPDATE documents SET status='error',error='服务中断，请重新上传' WHERE status='processing'"
+    )
     yield
     await jobs.shutdown()
     from app.resources import close_resources
@@ -110,4 +112,9 @@ for router in (llm_router, rag_router, nl2sql_router, agent_router, workflow_rou
 def health():
     from app.resources import loaded_resources
 
-    return {"status": "ok", "version": "2.0.0", "mode": "single-process", "loaded_resources": loaded_resources()}
+    return {
+        "status": "ok",
+        "version": "2.0.0",
+        "mode": "single-process",
+        "loaded_resources": loaded_resources(),
+    }

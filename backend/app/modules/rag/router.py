@@ -68,7 +68,9 @@ async def upload(
         }
         if effective_to:
             metadata["effective_to"] = effective_to.isoformat()
-        return jobs.submit("rag", "document.ingest", lambda: ingest(path, filename, metadata, remove_file=True))
+        return jobs.submit(
+            "rag", "document.ingest", lambda: ingest(path, filename, metadata, remove_file=True)
+        )
     except BaseException:
         path.unlink(missing_ok=True)
         raise
@@ -118,7 +120,9 @@ async def seed():
         results = []
         for path in sorted(get_settings().knowledge_dir.glob("*.md")):
             results.append(
-                await ingest(path, path.name, {"category": path.stem.split("-")[0], "effective_from": "2025-04-01"})
+                await ingest(
+                    path, path.name, {"category": path.stem.split("-")[0], "effective_from": "2025-04-01"}
+                )
             )
         return {"documents": results, "count": len(results)}
 

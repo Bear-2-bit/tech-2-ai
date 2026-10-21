@@ -43,7 +43,9 @@ def finish_run(run_id: str, status: str, latency: float, result=None, error: str
         "UPDATE runs SET status=?,finished_at=?,latency_ms=?,result=?,error=? WHERE id=?",
         (status, now(), round(latency, 2), encode(result) if result is not None else None, error, run_id),
     )
-    get_store().event(run_id, f"运行结束：{status}" + (f"；{error}" if error else ""), "ERROR" if error else "INFO")
+    get_store().event(
+        run_id, f"运行结束：{status}" + (f"；{error}" if error else ""), "ERROR" if error else "INFO"
+    )
 
 
 @contextmanager

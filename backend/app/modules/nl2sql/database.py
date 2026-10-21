@@ -69,7 +69,8 @@ def schema(path: Path | None = None) -> dict:
                     "name": name,
                     "description": DESCRIPTIONS[name],
                     "columns": [
-                        {"name": row[1], "type": row[2], "values": ENUMS.get((name, row[1]))} for row in columns
+                        {"name": row[1], "type": row[2], "values": ENUMS.get((name, row[1]))}
+                        for row in columns
                     ],
                     "row_count": db.execute(f'SELECT COUNT(*) FROM "{name}"').fetchone()[0],
                 }
@@ -85,7 +86,9 @@ def validate_sql(sql: str) -> str:
         statements = sqlglot.parse(sql, read="sqlite")
     except sqlglot.errors.ParseError as exc:
         raise AppError("SQL 语法无效。", "sql_invalid") from exc
-    if len(statements) != 1 or not isinstance(statements[0], (exp.Select, exp.Union, exp.Intersect, exp.Except)):
+    if len(statements) != 1 or not isinstance(
+        statements[0], (exp.Select, exp.Union, exp.Intersect, exp.Except)
+    ):
         raise AppError("只允许一条 SELECT 查询。", "sql_forbidden")
     tree = statements[0]
     forbidden = (exp.Insert, exp.Update, exp.Delete, exp.Create, exp.Drop, exp.Alter, exp.Command, exp.Into)
@@ -112,7 +115,12 @@ def execute(sql: str, max_rows: int = 100, path: Path | None = None, parameters=
                 "writefile",
             }:
                 return sqlite3.SQLITE_DENY
-            allowed = {sqlite3.SQLITE_SELECT, sqlite3.SQLITE_READ, sqlite3.SQLITE_FUNCTION, sqlite3.SQLITE_RECURSIVE}
+            allowed = {
+                sqlite3.SQLITE_SELECT,
+                sqlite3.SQLITE_READ,
+                sqlite3.SQLITE_FUNCTION,
+                sqlite3.SQLITE_RECURSIVE,
+            }
             return sqlite3.SQLITE_OK if action in allowed else sqlite3.SQLITE_DENY
 
         db.set_authorizer(authorize)
@@ -129,6 +137,8 @@ def execute(sql: str, max_rows: int = 100, path: Path | None = None, parameters=
         except sqlite3.DatabaseError as exc:
             code = "sql_timeout" if "interrupted" in str(exc).lower() else "sql_execution"
             message = (
-                "查询超过执行预算。" if code == "sql_timeout" else "SQL 无法执行，请检查字段、关联关系和统计口径。"
+                "查询超过执行预算。"
+                if code == "sql_timeout"
+                else "SQL 无法执行，请检查字段、关联关系和统计口径。"
             )
             raise AppError(message, code) from exc

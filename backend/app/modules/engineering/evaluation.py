@@ -43,7 +43,9 @@ async def run_case(case: GoldenCase) -> dict:
         actual = await query(SQLRequest(question=case.input, max_rows=500))
         reference = await asyncio.to_thread(execute, case.expected["sql"], 500)
         checks = {
-            "execution_accuracy": equivalent(actual["rows"], reference["rows"], case.expected.get("ordered", False)),
+            "execution_accuracy": equivalent(
+                actual["rows"], reference["rows"], case.expected.get("ordered", False)
+            ),
             "not_truncated": not actual["truncated"] and not reference["truncated"],
         }
         details = {"sql": actual["sql"], "actual_rows": actual["rows"], "expected_rows": reference["rows"]}
@@ -60,7 +62,10 @@ async def run_case(case: GoldenCase) -> dict:
 
         engine = native if case.expected.get("engine") == "native" else langchain
         actual = await engine.extract(case.input)
-        checks = {f"field.{key}": actual["result"].get(key) == value for key, value in case.expected["fields"].items()}
+        checks = {
+            f"field.{key}": actual["result"].get(key) == value
+            for key, value in case.expected["fields"].items()
+        }
         details = {"result": actual["result"]}
     elif case.type == "agent":
         from app.modules.agent.schemas import AgentRequest
@@ -117,7 +122,9 @@ async def evaluate(request: EvalRequest) -> dict:
         except Exception as exc:
             result = {"passed": False, "score": 0, "checks": {}, "details": {}, "error": public_error(exc)}
         result.update(case_id=case.id, type=case.type, latency_ms=round((perf_counter() - start) * 1000, 2))
-        get_store().execute("INSERT OR REPLACE INTO eval_results VALUES(?,?,?)", (run_id, case.id, encode(result)))
+        get_store().execute(
+            "INSERT OR REPLACE INTO eval_results VALUES(?,?,?)", (run_id, case.id, encode(result))
+        )
         results.append(result)
     return {
         "total": len(results),
@@ -129,6 +136,8 @@ async def evaluate(request: EvalRequest) -> dict:
             "dataset": "robot-ops-2026.09-v2",
             "prompt": "v2",
             "model": get_settings().deepseek_model,
-            "index_versions": [row["id"] for row in get_store().rows("SELECT id FROM documents WHERE status='ready'")],
+            "index_versions": [
+                row["id"] for row in get_store().rows("SELECT id FROM documents WHERE status='ready'")
+            ],
         },
     }
